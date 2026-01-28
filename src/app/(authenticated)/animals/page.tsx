@@ -87,10 +87,12 @@ const initialAnimals: Animal[] = [
 
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
 const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
+const filterAnimalTypes = ['All', ...animalTypes];
 
 export default function AnimalsPage() {
   const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof animalSchema>>({
@@ -116,6 +118,10 @@ export default function AnimalsPage() {
     form.reset();
     setIsDialogOpen(false);
   };
+
+  const filteredAnimals = animals.filter(
+    (animal) => filterType === 'All' || animal.type === filterType
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -236,7 +242,24 @@ export default function AnimalsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+            <div className="flex items-center justify-between">
+                <CardTitle>Your Livestock</CardTitle>
+                <div className="w-48">
+                    <Select value={filterType} onValueChange={setFilterType}>
+                        <SelectTrigger id="animal-type-filter" aria-label="Select animal type">
+                            <SelectValue placeholder="Filter by type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {filterAnimalTypes.map(type => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -247,29 +270,37 @@ export default function AnimalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {animals.map((animal) => (
-                <TableRow key={animal.id}>
-                  <TableCell className="font-medium">{animal.tagId}</TableCell>
-                  <TableCell>{animal.type}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        animal.healthStatus === 'Healthy'
-                          ? 'default'
-                          : animal.healthStatus === 'Sick'
-                          ? 'destructive'
-                          : 'secondary'
-                      }
-                       className={animal.healthStatus === 'Healthy' ? 'bg-primary/20 text-primary-foreground border-primary/50' : ''}
-                    >
-                      {animal.healthStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(animal.lastVaccination), 'PPP')}
-                  </TableCell>
+              {filteredAnimals.length > 0 ? (
+                filteredAnimals.map((animal) => (
+                  <TableRow key={animal.id}>
+                    <TableCell className="font-medium">{animal.tagId}</TableCell>
+                    <TableCell>{animal.type}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          animal.healthStatus === 'Healthy'
+                            ? 'default'
+                            : animal.healthStatus === 'Sick'
+                            ? 'destructive'
+                            : 'secondary'
+                        }
+                        className={animal.healthStatus === 'Healthy' ? 'bg-primary/20 text-primary-foreground border-primary/50' : ''}
+                      >
+                        {animal.healthStatus}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(animal.lastVaccination), 'PPP')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                 <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        No animals of this type found.
+                    </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
