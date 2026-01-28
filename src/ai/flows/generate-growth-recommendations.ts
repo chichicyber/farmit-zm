@@ -8,7 +8,17 @@
  * - GenerateGrowthRecommendationsOutput - The return type for the generateGrowthRecommendations function.
  */
 
-import { defineFlow, run, definePrompt, z, geminiPro } from '@/ai/genkit';
+import { configureGenkit, defineFlow, run } from 'genkit';
+import { definePrompt } from 'genkit/prompt';
+import { z } from 'zod';
+import { googleAI, geminiPro } from '@genkit-ai/googleai';
+
+// Configure Genkit within the flow file to avoid import issues.
+configureGenkit({
+  plugins: [googleAI()],
+  logLevel: 'debug',
+});
+
 
 const GenerateGrowthRecommendationsInputSchema = z.object({
   cropType: z.string().describe('The type of crop.'),
@@ -55,6 +65,7 @@ const generateGrowthRecommendationsFlow = defineFlow(
     outputSchema: GenerateGrowthRecommendationsOutputSchema,
   },
   async input => {
+    // Note: The API for `generate` in this older version returns the output directly.
     const output = await prompt.generate({input: input});
     if (!output) {
       throw new Error('No output from AI');

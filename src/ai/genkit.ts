@@ -1,11 +1,2 @@
-import { genkit, configureGenkit, defineFlow, run, definePrompt } from 'genkit';
-import { googleAI, geminiPro } from '@genkit-ai/googleai';
-import { z } from 'zod';
-
-configureGenkit({
-  plugins: [googleAI()],
-  logLevel: 'debug',
-});
-
-export const ai = genkit;
-export { defineFlow, run, definePrompt, geminiPro, z };
+// This file is intentionally left blank to resolve a module resolution issue during build.
+// Genkit is configured within the flow files that use it.
