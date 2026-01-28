@@ -73,7 +73,6 @@ export default function AuthenticatedLayout({
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  asChild
                   isActive={pathname === item.href}
                   className={cn(
                     'group-data-[collapsible=icon]:justify-center'
@@ -84,10 +83,8 @@ export default function AuthenticatedLayout({
                     className: 'group-data-[collapsible=icon]:block hidden',
                   }}
                 >
-                  <>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </>
+                  <item.icon />
+                  <span>{item.label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
