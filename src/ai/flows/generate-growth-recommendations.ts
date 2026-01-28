@@ -35,7 +35,7 @@ export async function generateGrowthRecommendations(
 
 const prompt = ai.definePrompt({
   name: 'generateGrowthRecommendationsPrompt',
-  model: 'gemini-pro',
+  model: 'gemini-1.5-flash',
   input: { schema: GenerateGrowthRecommendationsInputSchema },
   output: { schema: GenerateGrowthRecommendationsOutputSchema },
   prompt: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
