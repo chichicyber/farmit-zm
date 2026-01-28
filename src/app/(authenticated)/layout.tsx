@@ -96,7 +96,7 @@ export default function AuthenticatedLayout({
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center justify-between border-b bg-card/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
-          <SidebarTrigger className="md:hidden" />
+          <SidebarTrigger />
           <div className="hidden md:block">
             {/* Can add header content here if needed */}
           </div>
