@@ -1,5 +1,6 @@
-import { genkit, configureGenkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+import { genkit, configureGenkit, defineFlow, run, definePrompt } from 'genkit';
+import { googleAI, geminiPro } from '@genkit-ai/googleai';
+import { z } from 'zod';
 
 configureGenkit({
   plugins: [googleAI()],
@@ -7,3 +8,4 @@ configureGenkit({
 });
 
 export const ai = genkit;
+export { defineFlow, run, definePrompt, geminiPro, z };
