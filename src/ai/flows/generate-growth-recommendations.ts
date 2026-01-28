@@ -4,8 +4,6 @@
  * @fileOverview Generates AI-powered recommendations on crop management based on the crop type and its current growth stage.
  *
  * - generateGrowthRecommendations - a function that generates growth recommendations.
- * - GenerateGrowthRecommendationsInput - The input type for the generateGrowthRecommendations function.
- * - GenerateGrowthRecommendationsOutput - The return type for the generateGrowthRecommendations function.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -37,7 +35,7 @@ export async function generateGrowthRecommendations(
 
 const prompt = ai.definePrompt({
   name: 'generateGrowthRecommendationsPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateGrowthRecommendationsInputSchema },
   output: { schema: GenerateGrowthRecommendationsOutputSchema },
   prompt: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
