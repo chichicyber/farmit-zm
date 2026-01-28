@@ -13,12 +13,12 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import {
   Bot,
-  Carrot,
   Home,
   BookOpen,
   Rabbit,
@@ -39,31 +39,18 @@ const navItems = [
   { href: '/reminders', label: 'Reminders', icon: Bell },
 ];
 
-export default function AuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, loading } = useAuth();
+function AuthenticatedLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
-    }
-  }, [user, loading, router]);
-
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
+  const handleNavigate = (href: string) => {
+    router.push(href);
+    setOpenMobile(false);
+  };
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar>
         <SidebarHeader>
           <Logo />
@@ -77,7 +64,7 @@ export default function AuthenticatedLayout({
                   className={cn(
                     'group-data-[collapsible=icon]:justify-center'
                   )}
-                  onClick={() => router.push(item.href)}
+                  onClick={() => handleNavigate(item.href)}
                   tooltip={{
                     children: item.label,
                     className: 'group-data-[collapsible=icon]:block hidden',
@@ -103,6 +90,35 @@ export default function AuthenticatedLayout({
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </SidebarInset>
+    </>
+  );
+}
+
+export default function AuthenticatedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <AuthenticatedLayoutContent>{children}</AuthenticatedLayoutContent>
     </SidebarProvider>
   );
 }
