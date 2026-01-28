@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bell, Tractor, Rabbit, PlusCircle, Sun, Cloud, CloudRain } from 'lucide-react';
