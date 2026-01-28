@@ -15,7 +15,7 @@ const GenerateGrowthRecommendationsInputSchema = z.object({
   growthStage: z.string().describe('The current growth stage of the crop.'),
 });
 
-export type GenerateGrowthRecommendationsInput = z.infer<
+type GenerateGrowthRecommendationsInput = z.infer<
   typeof GenerateGrowthRecommendationsInputSchema
 >;
 
@@ -25,7 +25,7 @@ const GenerateGrowthRecommendationsOutputSchema = z.object({
     .describe('AI-powered recommendations for crop management.'),
 });
 
-export type GenerateGrowthRecommendationsOutput = z.infer<
+type GenerateGrowthRecommendationsOutput = z.infer<
   typeof GenerateGrowthRecommendationsOutputSchema
 >;
 
