@@ -1,3 +1,5 @@
+'use server';
+
 import { genkit, type Genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
@@ -7,7 +9,7 @@ let initError: Error | null = null;
 try {
   // This can throw an error if the API key is not configured.
   aiInstance = genkit({
-    plugins: [googleAI({ apiVersion: 'v1' })],
+    plugins: [googleAI()],
   });
 } catch (e: any) {
   console.error("Genkit initialization failed. This is likely due to a missing GEMINI_API_KEY environment variable.", e.message);
