@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -55,6 +55,19 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
+        description: 'User not found or password incorrect. Please sign up if you are a new user.',
+      });
+    }
+  };
+
+  const handleAnonymousSignIn = async () => {
+    try {
+      await signInAnonymously(auth);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Anonymous Sign-In Failed',
         description: error.message || 'An unexpected error occurred.',
       });
     }
@@ -122,7 +135,7 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex-col">
+        <CardFooter className="flex-col gap-4">
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link
@@ -132,6 +145,19 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+           <div className="relative w-full">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                Or
+                </span>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full" onClick={handleAnonymousSignIn} disabled={form.formState.isSubmitting}>
+            Sign in Anonymously
+          </Button>
         </CardFooter>
       </Card>
     </div>
