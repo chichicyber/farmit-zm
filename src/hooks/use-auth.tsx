@@ -1,54 +1,19 @@
 'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-} from 'react';
-import {
-  onAuthStateChanged,
-  type User,
-  signOut as firebaseSignOut,
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useUser, useAuth as useFirebaseAuth } from '@/firebase';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  logout: () => Promise<void>;
-}
+export const useAuth = () => {
+  const { user, isUserLoading, userError } = useUser();
+  const auth = useFirebaseAuth();
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-  
   const logout = async () => {
-    await firebaseSignOut(auth);
+    if (auth) {
+      await firebaseSignOut(auth);
+    } else {
+      console.error("Firebase auth instance not available for logout.");
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return { user, loading: isUserLoading, error: userError, logout };
 };
