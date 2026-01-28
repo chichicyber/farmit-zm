@@ -164,13 +164,13 @@ export default function AnimalsPage() {
         <div className="flex flex-shrink-0 gap-2">
            <Link href="/animals/map" passHref>
             <Button variant="outline">
-              <Map className="mr-2 h-4 w-4" /> View Map
+              <Map /> View Map
             </Button>
           </Link>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Animal
+                <PlusCircle /> Add Animal
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -322,7 +322,7 @@ export default function AnimalsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
-                          <Pencil className="h-4 w-4" />
+                          <Pencil />
                           <span className="sr-only">Edit Animal</span>
                       </Button>
                     </TableCell>

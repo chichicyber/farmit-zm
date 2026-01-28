@@ -61,13 +61,34 @@ export default function AnimalMapPage() {
 
   const simulateMovement = () => {
     setLocations(prevLocations =>
-      prevLocations.map(animal => ({
-        ...animal,
-        position: {
-          lat: animal.position.lat + (Math.random() - 0.5) * 0.001,
-          lng: animal.position.lng + (Math.random() - 0.5) * 0.001,
-        },
-      }))
+      prevLocations.map(animal => {
+        const outOfBounds = isOutsideGeofence(animal.position, selectedField);
+        let newLat = animal.position.lat;
+        let newLng = animal.position.lng;
+        const movementFactor = 0.0005; // controls speed of movement
+
+        if (outOfBounds) {
+          // Move towards the center of the selected field if they wander off
+          const angle = Math.atan2(
+            selectedField.center.lat - animal.position.lat,
+            selectedField.center.lng - animal.position.lng
+          );
+          newLat += Math.sin(angle) * movementFactor;
+          newLng += Math.cos(angle) * movementFactor;
+        } else {
+          // Move randomly
+          newLat += (Math.random() - 0.5) * movementFactor;
+          newLng += (Math.random() - 0.5) * movementFactor;
+        }
+        
+        return {
+          ...animal,
+          position: {
+            lat: newLat,
+            lng: newLng,
+          },
+        };
+      })
     );
     setTime(new Date());
   };
@@ -125,7 +146,7 @@ export default function AnimalMapPage() {
                             </Select>
                         </div>
                          <Button onClick={simulateMovement} variant="outline" className="w-full">
-                            <RefreshCw className="mr-2 h-4 w-4" /> Simulate Movement
+                            <RefreshCw /> Simulate Movement
                         </Button>
                     </CardContent>
                 </Card>

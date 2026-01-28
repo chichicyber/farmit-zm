@@ -121,7 +121,7 @@ export default function CropsPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Crop
+              <PlusCircle /> Add Crop
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">

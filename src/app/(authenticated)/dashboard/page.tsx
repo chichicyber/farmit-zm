@@ -88,12 +88,12 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <Link href="/crops" passHref>
             <Button className="w-full">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Crop
+              <PlusCircle /> Add New Crop
             </Button>
           </Link>
           <Link href="/animals" passHref>
             <Button variant="secondary" className="w-full">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Animal
+              <PlusCircle /> Add New Animal
             </Button>
           </Link>
         </div>
