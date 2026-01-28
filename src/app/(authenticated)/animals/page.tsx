@@ -152,7 +152,7 @@ export default function AnimalsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight">
             Animal Tracking
@@ -161,15 +161,15 @@ export default function AnimalsPage() {
             Keep records of your livestock&apos;s health and status.
           </p>
         </div>
-        <div className="flex flex-shrink-0 gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
            <Link href="/animals/map" passHref>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full">
               <Map /> View Map
             </Button>
           </Link>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full">
                 <PlusCircle /> Add Animal
               </Button>
             </DialogTrigger>
@@ -287,56 +287,58 @@ export default function AnimalsPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tag ID</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Health Status</TableHead>
-                <TableHead>Last Vaccination</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAnimals.length > 0 ? (
-                filteredAnimals.map((animal) => (
-                  <TableRow key={animal.id}>
-                    <TableCell className="font-medium">{animal.tagId}</TableCell>
-                    <TableCell>{animal.type}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          animal.healthStatus === 'Healthy'
-                            ? 'default'
-                            : animal.healthStatus === 'Sick'
-                            ? 'destructive'
-                            : 'secondary'
-                        }
-                        className={animal.healthStatus === 'Healthy' ? 'bg-primary/20 text-primary-foreground border-primary/50' : ''}
-                      >
-                        {animal.healthStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(animal.lastVaccination), 'PPP')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
-                          <Pencil />
-                          <span className="sr-only">Edit Animal</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                        No animals of this type found.
-                    </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tag ID</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Health Status</TableHead>
+                  <TableHead>Last Vaccination</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredAnimals.length > 0 ? (
+                  filteredAnimals.map((animal) => (
+                    <TableRow key={animal.id}>
+                      <TableCell className="font-medium">{animal.tagId}</TableCell>
+                      <TableCell>{animal.type}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            animal.healthStatus === 'Healthy'
+                              ? 'default'
+                              : animal.healthStatus === 'Sick'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                          className={animal.healthStatus === 'Healthy' ? 'bg-primary/20 text-primary-foreground border-primary/50' : ''}
+                        >
+                          {animal.healthStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(animal.lastVaccination), 'PPP')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
+                            <Pencil />
+                            <span className="sr-only">Edit Animal</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                          No animals of this type found.
+                      </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       

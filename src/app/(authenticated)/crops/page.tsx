@@ -109,7 +109,7 @@ export default function CropsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight">
             Crop Tracking
@@ -118,116 +118,120 @@ export default function CropsPage() {
             Manage your crop cycles from planting to harvest.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle /> Add Crop
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Crop Record</DialogTitle>
-              <DialogDescription>
-                Enter the details for the new crop or field you want to track.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Crop/Field Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Maize Field B" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="plantingDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Planting Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="growthStage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Growth Stage</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <div className="flex w-full sm:w-auto">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full">
+                <PlusCircle /> Add Crop
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add New Crop Record</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the new crop or field you want to track.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Crop/Field Name</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a stage" />
-                          </SelectTrigger>
+                          <Input placeholder="e.g., Maize Field B" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {growthStages.map(stage => (
-                             <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="expectedHarvest"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expected Harvest Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
-                  </DialogClose>
-                  <Button type="submit">Save Record</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="plantingDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Planting Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="growthStage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Growth Stage</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a stage" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {growthStages.map(stage => (
+                              <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expectedHarvest"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expected Harvest Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit">Save Record</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Planting Date</TableHead>
-                <TableHead>Growth Stage</TableHead>
-                <TableHead>Expected Harvest</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {crops.map((crop) => (
-                <TableRow key={crop.id}>
-                  <TableCell className="font-medium">{crop.name}</TableCell>
-                  <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
-                  <TableCell>{crop.growthStage}</TableCell>
-                  <TableCell>{format(new Date(crop.expectedHarvest), 'PPP')}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Planting Date</TableHead>
+                  <TableHead>Growth Stage</TableHead>
+                  <TableHead>Expected Harvest</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {crops.map((crop) => (
+                  <TableRow key={crop.id}>
+                    <TableCell className="font-medium">{crop.name}</TableCell>
+                    <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
+                    <TableCell>{crop.growthStage}</TableCell>
+                    <TableCell>{format(new Date(crop.expectedHarvest), 'PPP')}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
