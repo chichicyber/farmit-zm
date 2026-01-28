@@ -1,0 +1,310 @@
+{
+  "entities": {
+    "CropLesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CropLesson",
+      "type": "object",
+      "description": "Represents a structured lesson on crop production.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the crop lesson."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the crop lesson."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the crop lesson, potentially in markdown or HTML format."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category or topic of the crop lesson (e.g., planting, harvesting)."
+        },
+        "visualAidUrl": {
+          "type": "string",
+          "description": "URL to a visual aid (image, video) for the lesson.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "category"
+      ]
+    },
+    "AnimalLesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnimalLesson",
+      "type": "object",
+      "description": "Represents a structured lesson on animal production.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the animal lesson."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the animal lesson."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the animal lesson, potentially in markdown or HTML format."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category or topic of the animal lesson (e.g., feeding, health)."
+        },
+        "visualAidUrl": {
+          "type": "string",
+          "description": "URL to a visual aid (image, video) for the lesson.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "category"
+      ]
+    },
+    "CropTracking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CropTracking",
+      "type": "object",
+      "description": "Represents data for tracking a specific crop.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the crop tracking record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N CropTracking)"
+        },
+        "cropType": {
+          "type": "string",
+          "description": "Type of crop being tracked (e.g., maize, beans)."
+        },
+        "plantingDate": {
+          "type": "string",
+          "description": "Date when the crop was planted.",
+          "format": "date-time"
+        },
+        "growthStage": {
+          "type": "string",
+          "description": "Current growth stage of the crop (e.g., seedling, flowering)."
+        },
+        "fertilizerUse": {
+          "type": "string",
+          "description": "Type and amount of fertilizer used."
+        },
+        "pesticideUse": {
+          "type": "string",
+          "description": "Type and amount of pesticide used."
+        },
+        "expectedHarvestDate": {
+          "type": "string",
+          "description": "Expected date of harvest.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cropType",
+        "plantingDate",
+        "growthStage"
+      ]
+    },
+    "AnimalTracking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnimalTracking",
+      "type": "object",
+      "description": "Represents data for tracking a specific animal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the animal tracking record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N AnimalTracking)"
+        },
+        "animalType": {
+          "type": "string",
+          "description": "Type of animal being tracked (e.g., cow, goat)."
+        },
+        "feedingSchedule": {
+          "type": "string",
+          "description": "Details of the animal's feeding schedule."
+        },
+        "healthStatus": {
+          "type": "string",
+          "description": "Current health status of the animal."
+        },
+        "vaccinationRecords": {
+          "type": "string",
+          "description": "Records of vaccinations given to the animal."
+        },
+        "growthMetrics": {
+          "type": "string",
+          "description": "Measurements of the animal's growth (e.g., weight, height)."
+        },
+        "locationLatitude": {
+          "type": "number",
+          "description": "Latitude of the animal's current location."
+        },
+        "locationLongitude": {
+          "type": "number",
+          "description": "Longitude of the animal's current location."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "animalType"
+      ]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder for a specific task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the reminder."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Reminder)"
+        },
+        "task": {
+          "type": "string",
+          "description": "Description of the task to be reminded about."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date and time when the reminder should trigger.",
+          "format": "date-time"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Indicates whether the reminder has been completed."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "task",
+        "dueDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/crop_tracking/{cropTrackingId}",
+        "definition": {
+          "entityName": "CropTracking",
+          "schema": {
+            "$ref": "#/backend/entities/CropTracking"
+          },
+          "description": "Stores crop tracking data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the crop tracking data."
+            },
+            {
+              "name": "cropTrackingId",
+              "description": "The ID of the crop tracking document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/animal_tracking/{animalTrackingId}",
+        "definition": {
+          "entityName": "AnimalTracking",
+          "schema": {
+            "$ref": "#/backend/entities/AnimalTracking"
+          },
+          "description": "Stores animal tracking data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the animal tracking data."
+            },
+            {
+              "name": "animalTrackingId",
+              "description": "The ID of the animal tracking document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/backend/entities/Reminder"
+          },
+          "description": "Stores reminder data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the reminder data."
+            },
+            {
+              "name": "reminderId",
+              "description": "The ID of the reminder document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/crop_lessons/{cropLessonId}",
+        "definition": {
+          "entityName": "CropLesson",
+          "schema": {
+            "$ref": "#/backend/entities/CropLesson"
+          },
+          "description": "Stores crop lesson data, accessible to all users.",
+          "params": [
+            {
+              "name": "cropLessonId",
+              "description": "The ID of the crop lesson document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/animal_lessons/{animalLessonId}",
+        "definition": {
+          "entityName": "AnimalLesson",
+          "schema": {
+            "$ref": "#/backend/entities/AnimalLesson"
+          },
+          "description": "Stores animal lesson data, accessible to all users.",
+          "params": [
+            {
+              "name": "animalLessonId",
+              "description": "The ID of the animal lesson document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  All user-specific data (CropTracking, AnimalTracking, and Reminders) are stored under the `/users/{userId}` path. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
+  }
+}
