@@ -1,2 +1,8 @@
-// This file is intentionally left blank to resolve a module resolution issue during build.
-// Genkit is configured within the flow files that use it.
+'use server';
+
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+
+export const ai = genkit({
+  plugins: [googleAI()],
+});

@@ -8,17 +8,8 @@
  * - GenerateGrowthRecommendationsOutput - The return type for the generateGrowthRecommendations function.
  */
 
-import { configureGenkit, defineFlow, run } from 'genkit';
-import { definePrompt } from 'genkit/prompt';
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { googleAI, geminiPro } from '@genkit-ai/googleai';
-
-// Configure Genkit within the flow file to avoid import issues.
-configureGenkit({
-  plugins: [googleAI()],
-  logLevel: 'debug',
-});
-
 
 const GenerateGrowthRecommendationsInputSchema = z.object({
   cropType: z.string().describe('The type of crop.'),
@@ -42,15 +33,14 @@ export type GenerateGrowthRecommendationsOutput = z.infer<
 export async function generateGrowthRecommendations(
   input: GenerateGrowthRecommendationsInput
 ): Promise<GenerateGrowthRecommendationsOutput> {
-  return run(generateGrowthRecommendationsFlow, input);
+  return generateGrowthRecommendationsFlow(input);
 }
 
-const prompt = definePrompt({
+const prompt = ai.definePrompt({
   name: 'generateGrowthRecommendationsPrompt',
-  inputSchema: GenerateGrowthRecommendationsInputSchema,
-  outputSchema: GenerateGrowthRecommendationsOutputSchema,
-  model: geminiPro,
-  template: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
+  input: { schema: GenerateGrowthRecommendationsInputSchema },
+  output: { schema: GenerateGrowthRecommendationsOutputSchema },
+  prompt: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
 
 Crop Type: {{{cropType}}}
 Growth Stage: {{{growthStage}}}
@@ -58,15 +48,14 @@ Growth Stage: {{{growthStage}}}
 Recommendations:`,
 });
 
-const generateGrowthRecommendationsFlow = defineFlow(
+const generateGrowthRecommendationsFlow = ai.defineFlow(
   {
     name: 'generateGrowthRecommendationsFlow',
     inputSchema: GenerateGrowthRecommendationsInputSchema,
     outputSchema: GenerateGrowthRecommendationsOutputSchema,
   },
   async input => {
-    // Note: The API for `generate` in this older version returns the output directly.
-    const output = await prompt.generate({input: input});
+    const { output } = await prompt(input);
     if (!output) {
       throw new Error('No output from AI');
     }
