@@ -49,8 +49,14 @@ export default function AiAdvisorPage() {
     setIsLoading(true);
     setRecommendation('');
     try {
-      const result = await generateGrowthRecommendations(values);
-      setRecommendation(result.recommendations);
+      const prompt = `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
+
+Crop Type: ${values.cropType}
+Growth Stage: ${values.growthStage}
+
+Recommendations:`;
+      const result = await generateGrowthRecommendations(prompt);
+      setRecommendation(result);
     } catch (error: any) {
       console.error(error);
       const description = error.message || 'There was a problem getting a recommendation. Please try again.';
