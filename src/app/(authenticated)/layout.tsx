@@ -44,9 +44,13 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
+  // This effect will close the mobile menu whenever the page route changes.
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
+
   const handleNavigate = (href: string) => {
     router.push(href);
-    setOpenMobile(false);
   };
 
   return (
