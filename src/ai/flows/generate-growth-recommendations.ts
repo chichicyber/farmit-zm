@@ -9,7 +9,9 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { run } from 'genkit/flow';
 import {z} from 'genkit';
+import { geminiPro } from '@genkit-ai/googleai';
 
 const GenerateGrowthRecommendationsInputSchema = z.object({
   cropType: z.string().describe('The type of crop.'),
@@ -27,14 +29,15 @@ export type GenerateGrowthRecommendationsOutput = z.infer<typeof GenerateGrowthR
 export async function generateGrowthRecommendations(
   input: GenerateGrowthRecommendationsInput
 ): Promise<GenerateGrowthRecommendationsOutput> {
-  return generateGrowthRecommendationsFlow(input);
+  return run(generateGrowthRecommendationsFlow, input);
 }
 
 const prompt = ai.definePrompt({
   name: 'generateGrowthRecommendationsPrompt',
-  input: {schema: GenerateGrowthRecommendationsInputSchema},
-  output: {schema: GenerateGrowthRecommendationsOutputSchema},
-  prompt: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
+  inputSchema: GenerateGrowthRecommendationsInputSchema,
+  outputSchema: GenerateGrowthRecommendationsOutputSchema,
+  model: geminiPro,
+  template: `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
 
 Crop Type: {{{cropType}}}
 Growth Stage: {{{growthStage}}}
@@ -49,7 +52,11 @@ const generateGrowthRecommendationsFlow = ai.defineFlow(
     outputSchema: GenerateGrowthRecommendationsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const llmResponse = await prompt.generate({input: input});
+    const output = llmResponse.output();
+    if (!output) {
+        throw new Error("No output from AI");
+    }
+    return output;
   }
 );

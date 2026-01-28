@@ -1,13 +1,9 @@
 'use client';
 
-import {
-  APIProvider,
-  Map,
-  AdvancedMarker,
-  Pin,
-  InfoWindow,
-} from '@vis.gl/react-google-maps';
 import { useEffect, useState } from 'react';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,18 +42,39 @@ const isOutsideGeofence = (position: { lat: number; lng: number }, field: typeof
     return dist > field.radius;
 };
 
+// Custom icons
+const defaultIcon = new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowSize: [41, 41]
+});
+
+const outOfBoundsIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowSize: [41, 41]
+});
+
+// Component to update map view when center changes
+function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
 export default function AnimalMapPage() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const [locations, setLocations] = useState<AnimalLocation[]>(getInitialAnimalLocations());
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
   const [selectedField, setSelectedField] = useState(fields[0]);
   const [time, setTime] = useState(new Date());
-
-
-  useEffect(() => {
-    // In a real app, this would be fetched or set on the client
-    setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? null);
-  }, []);
 
   const simulateMovement = () => {
     setLocations(prevLocations =>
@@ -100,25 +117,12 @@ export default function AnimalMapPage() {
     }
   };
 
-  if (apiKey === null) {
-      return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Map Unavailable</CardTitle>
-                <CardDescription>
-                    The Google Maps API key is not configured. Please set the NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.
-                </CardDescription>
-            </CardHeader>
-        </Card>
-      );
-  }
-
   return (
     <div className="flex flex-col gap-6">
        <div>
         <h1 className="text-3xl font-bold font-headline tracking-tight">Animal Map View</h1>
         <p className="text-muted-foreground">
-            Monitor your livestock locations across different fields.
+            Monitor your livestock locations across different fields using OpenStreetMap.
         </p>
       </div>
 
@@ -164,46 +168,48 @@ export default function AnimalMapPage() {
             <div className="md:col-span-2">
                  <Card className="h-[70vh]">
                     <CardContent className="p-0 h-full rounded-lg overflow-hidden">
-                        <APIProvider apiKey={apiKey}>
-                            <Map
-                            center={selectedField.center}
+                        <MapContainer
+                            center={[selectedField.center.lat, selectedField.center.lng]}
                             zoom={14}
-                            mapId="farmit_map_2"
-                            mapTypeControl={false}
-                            streetViewControl={false}
-                            >
+                            scrollWheelZoom={false}
+                            className="h-full w-full"
+                        >
+                            <ChangeView center={[selectedField.center.lat, selectedField.center.lng]} zoom={14} />
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
                             {locations.map((animal) => {
                                 const outOfBounds = isOutsideGeofence(animal.position, selectedField);
                                 return (
-                                    <AdvancedMarker 
-                                        key={animal.id} 
-                                        position={animal.position}
-                                        onClick={() => setSelectedAnimal(animal)}
+                                    <Marker
+                                        key={animal.id}
+                                        position={[animal.position.lat, animal.position.lng]}
+                                        icon={outOfBounds ? outOfBoundsIcon : defaultIcon}
+                                        eventHandlers={{
+                                            click: () => {
+                                                setSelectedAnimal(animal);
+                                            },
+                                        }}
                                     >
-                                        <Pin 
-                                            background={outOfBounds ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'}
-                                            borderColor={outOfBounds ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'}
-                                            glyphColor={'white'}
-                                        />
-                                    </AdvancedMarker>
-                                )
+                                    </Marker>
+                                );
                             })}
-                            {selectedAnimal && (
-                                <InfoWindow 
-                                    position={selectedAnimal.position}
-                                    onCloseClick={() => setSelectedAnimal(null)}
+                             {selectedAnimal && (
+                                <Popup 
+                                    position={[selectedAnimal.position.lat, selectedAnimal.position.lng]}
+                                    onClose={() => setSelectedAnimal(null)}
                                 >
-                                    <div className="p-2 space-y-1">
+                                    <div className="space-y-1 p-1">
                                         <h3 className="font-bold">Tag ID: {selectedAnimal.tagId}</h3>
                                         <p>Type: {selectedAnimal.type}</p>
                                         {isOutsideGeofence(selectedAnimal.position, selectedField) &&
                                             <Badge variant="destructive">Outside Geofence</Badge>
                                         }
                                     </div>
-                                </InfoWindow>
+                                </Popup>
                             )}
-                            </Map>
-                        </APIProvider>
+                        </MapContainer>
                     </CardContent>
                 </Card>
             </div>
