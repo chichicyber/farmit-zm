@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { run } from 'genkit/flow';
+import { run } from 'genkit';
 import {z} from 'genkit';
 import { geminiPro } from '@genkit-ai/googleai';
 
