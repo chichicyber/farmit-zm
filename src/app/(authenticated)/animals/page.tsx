@@ -46,7 +46,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { Map, PlusCircle } from 'lucide-react';
+import { Map, PlusCircle, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -91,7 +91,9 @@ const filterAnimalTypes = ['All', ...animalTypes];
 
 export default function AnimalsPage() {
   const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
 
@@ -105,7 +107,7 @@ export default function AnimalsPage() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof animalSchema>) => {
+  const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
     const newAnimal: Animal = {
       id: (animals.length + 1).toString(),
       ...values,
@@ -116,8 +118,33 @@ export default function AnimalsPage() {
       description: `Animal with tag ${values.tagId} has been added.`,
     });
     form.reset();
-    setIsDialogOpen(false);
+    setIsAddDialogOpen(false);
   };
+  
+  const handleEditOpen = (animal: Animal) => {
+    setEditingAnimal(animal);
+    const formattedDate = format(new Date(animal.lastVaccination), 'yyyy-MM-dd');
+    form.reset({ ...animal, lastVaccination: formattedDate });
+    setIsEditDialogOpen(true);
+  };
+
+  const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
+    if (!editingAnimal) return;
+    
+    setAnimals(animals.map(animal => 
+        animal.id === editingAnimal.id ? { ...animal, ...values, lastVaccination: new Date(values.lastVaccination).toISOString() } : animal
+    ));
+    
+    toast({
+        title: 'Success!',
+        description: `Animal with tag ${values.tagId} has been updated.`,
+    });
+    
+    form.reset();
+    setEditingAnimal(null);
+    setIsEditDialogOpen(false);
+  };
+
 
   const filteredAnimals = animals.filter(
     (animal) => filterType === 'All' || animal.type === filterType
@@ -140,7 +167,7 @@ export default function AnimalsPage() {
               <Map className="mr-2 h-4 w-4" /> View Map
             </Button>
           </Link>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Animal
@@ -155,7 +182,7 @@ export default function AnimalsPage() {
               </DialogHeader>
               <Form {...form}>
                 <form
-                  onSubmit={form.handleSubmit(onSubmit)}
+                  onSubmit={form.handleSubmit(onAddSubmit)}
                   className="space-y-4 py-4"
                 >
                   <FormField
@@ -267,6 +294,7 @@ export default function AnimalsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Health Status</TableHead>
                 <TableHead>Last Vaccination</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -292,11 +320,17 @@ export default function AnimalsPage() {
                     <TableCell>
                       {format(new Date(animal.lastVaccination), 'PPP')}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit Animal</span>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         No animals of this type found.
                     </TableCell>
                 </TableRow>
@@ -305,6 +339,101 @@ export default function AnimalsPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      {/* Edit Animal Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Animal Record</DialogTitle>
+            <DialogDescription>
+              Update the details for the selected animal.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onEditSubmit)}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={form.control}
+                name="tagId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tag ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., ZM-C-003" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Animal Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {animalTypes.map(type => (
+                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="healthStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Health Status</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {healthStatuses.map(status => (
+                           <SelectItem key={status} value={status}>{status}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastVaccination"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Vaccination Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
