@@ -1,6 +1,6 @@
 'use client';
 
-import { generateGrowthRecommendations } from '@/ai/flows/generate-growth-recommendations';
+import { generateRecommendation } from '@/ai/flows/generate-growth-recommendations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -55,7 +55,7 @@ Crop Type: ${values.cropType}
 Growth Stage: ${values.growthStage}
 
 Recommendations:`;
-      const result = await generateGrowthRecommendations(prompt);
+      const result = await generateRecommendation(prompt);
       setRecommendation(result);
     } catch (error: any) {
       console.error(error);
