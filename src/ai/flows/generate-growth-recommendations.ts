@@ -7,13 +7,8 @@
  * - GenerateGrowthRecommendationsInput - The input type for the generateGrowthRecommendations function.
  * - GenerateGrowthRecommendationsOutput - The return type for the generateGrowthRecommendations function.
  */
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-const ai = genkit({
-  plugins: [googleAI()],
-});
 
 const GenerateGrowthRecommendationsInputSchema = z.object({
   cropType: z.string().describe('The type of crop.'),
