@@ -51,13 +51,13 @@ export default function AiAdvisorPage() {
     try {
       const result = await generateGrowthRecommendations(values);
       setRecommendation(result.recommendations);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      const description = error.message || 'There was a problem getting a recommendation. Please try again.';
       toast({
         variant: 'destructive',
         title: 'Error Generating Recommendation',
-        description:
-          'There was a problem getting a recommendation. Please try again.',
+        description: description,
       });
     } finally {
       setIsLoading(false);
