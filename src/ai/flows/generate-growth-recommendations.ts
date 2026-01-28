@@ -8,7 +8,7 @@
  * - GenerateGrowthRecommendationsOutput - The return type for the generateGrowthRecommendations function.
  */
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 
 const ai = genkit({
