@@ -119,6 +119,20 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
+    /**
+     * @description Secures saved AI advice, allowing only the owner to access it.
+     * @path /users/{userId}/advices/{adviceId}
+     * @allow (create) An authenticated user creating advice for themselves.
+     * @deny (get) A user trying to read another user's saved advice.
+     * @principle Restricts access to a user's own data tree and enforces ownership.
+     */
+    match /users/{userId}/advices/{adviceId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserIdImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
     // -------------------------------------------------------------------------
     // Public Educational Content
     // -------------------------------------------------------------------------
@@ -152,3 +166,4 @@ service cloud.firestore {
     }
   }
 }
+    

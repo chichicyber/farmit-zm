@@ -202,6 +202,47 @@
         "task",
         "dueDate"
       ]
+    },
+    "Advice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Advice",
+      "type": "object",
+      "description": "Represents a piece of saved AI-generated advice for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the advice record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Advice)"
+        },
+        "cropType": {
+          "type": "string",
+          "description": "The crop type for which the advice was generated."
+        },
+        "growthStage": {
+          "type": "string",
+          "description": "The growth stage for which the advice was generated."
+        },
+        "recommendation": {
+          "type": "string",
+          "description": "The AI-generated recommendation text, in markdown format."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the advice was saved.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cropType",
+        "growthStage",
+        "recommendation",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -273,6 +314,26 @@
         }
       },
       {
+        "path": "/users/{userId}/advices/{adviceId}",
+        "definition": {
+          "entityName": "Advice",
+          "schema": {
+            "$ref": "#/backend/entities/Advice"
+          },
+          "description": "Stores saved AI advice for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the advice data."
+            },
+            {
+              "name": "adviceId",
+              "description": "The ID of the advice document."
+            }
+          ]
+        }
+      },
+      {
         "path": "/crop_lessons/{cropLessonId}",
         "definition": {
           "entityName": "CropLesson",
@@ -305,6 +366,7 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  All user-specific data (CropTracking, AnimalTracking, and Reminders) are stored under the `/users/{userId}` path. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
+    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  All user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under the `/users/{userId}` path. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
   }
 }
+    
