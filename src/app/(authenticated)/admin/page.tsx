@@ -363,7 +363,9 @@ export default function AdminPage() {
                     </TableRow>
                   </>
                 ) : users && users.length > 0 ? (
-                  users.map((user) => (
+                  users.map((user) => {
+                    const displayRole = user.email === 'henrychemba@gmail.com' ? 'admin' : user.role;
+                    return (
                     <TableRow key={user.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <Link
@@ -377,15 +379,15 @@ export default function AdminPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            user.role === 'admin' ? 'destructive' : 'secondary'
+                            displayRole === 'admin' ? 'destructive' : 'secondary'
                           }
                           className="capitalize"
                         >
-                          {user.role}
+                          {displayRole}
                         </Badge>
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 ) : (
                   <TableRow>
                     <TableCell colSpan={3} className="h-24 text-center">
