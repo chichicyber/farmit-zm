@@ -4,45 +4,51 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isOwner(userId) {
+      // Checks if the requesting user is the owner of the document.
       return request.auth != null && request.auth.uid == userId;
     }
 
     function isAdmin() {
-      // Check if the user is authenticated and if their role in the /users/{uid} document is 'admin'
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Safely checks if the user has an 'admin' role.
+      // It first checks for authentication, then for the existence of the user's profile document.
+      return request.auth != null 
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /users/{userId} {
-      // Admins can read any user document, users can only read their own.
+      // READ: A user can get their own profile, or an admin can get any profile.
       allow get: if isOwner(userId) || isAdmin();
-      // Admins can list all users.
+      
+      // LIST: Only admins can list all users.
       allow list: if isAdmin();
-      // Users can create their own profile, admins can create any profile.
-      allow create: if isOwner(userId) || isAdmin();
-       // Admins can update any user document, users can only update their own.
-      allow update: if isOwner(userId) || isAdmin();
-      // No one can delete user profiles from the client.
+      
+      // CREATE: A user can create their own profile document. This rule is now simplified 
+      // to prevent race conditions during signup.
+      allow create: if isOwner(userId);
+
+      // UPDATE: A user can update their own profile, but cannot change their role.
+      // An admin can update any part of any user's profile.
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+
+      // DELETE: Deleting users from the client is not allowed.
       allow delete: if false;
     }
 
-    // Rule for all user subcollections (e.g., crop_tracking, animal_tracking, reminders)
+    // Rule for all user subcollections (crop_tracking, animal_tracking, etc.)
     match /users/{userId}/{subcollection}/{docId} {
-       // Allow access if the user is the owner of the parent document OR if the user is an admin.
+       // Allow full access if the user is the owner of the parent document or if the user is an admin.
       allow read, write: if isOwner(userId) || isAdmin();
     }
 
     // Rules for public, read-only lesson collections
     match /crop_lessons/{lessonId} {
-      // Allow any authenticated user to read lessons.
       allow read: if request.auth != null;
-      // Do not allow writing to lessons through the client SDK.
       allow write: if false;
     }
 
     match /animal_lessons/{animalLessonId} {
-       // Allow any authenticated user to read lessons.
       allow read: if request.auth != null;
-       // Do not allow writing to lessons through the client SDK.
       allow write: if false;
     }
   }
