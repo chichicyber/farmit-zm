@@ -45,6 +45,24 @@ export async function diagnoseFarmIssue(
           temperature: 0.4,
           maxOutputTokens: 2048,
         },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+          },
+        ],
       }),
     });
 
@@ -57,8 +75,20 @@ export async function diagnoseFarmIssue(
     }
 
     const data = await response.json();
+
+    // Check if the response was blocked by safety filters
+    if (!data.candidates || data.candidates.length === 0) {
+      if (data.promptFeedback?.blockReason) {
+        const reason = data.promptFeedback.blockReason;
+        console.error(`Diagnosis blocked by safety filter. Reason: ${reason}`);
+        return `The AI could not provide a diagnosis because the request was blocked for safety reasons (${reason}). Please try a different image or description.`;
+      }
+      console.error("Diagnosis Error: No candidates returned from API.", data);
+      return "The AI did not return a response. This might be due to a content filter. Please try again with a different image or prompt.";
+    }
+
     return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text ??
+      data.candidates[0]?.content?.parts?.[0]?.text ??
       "No response from Gemini"
     );
   } catch (error: any) {
