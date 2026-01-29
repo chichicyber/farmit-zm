@@ -6,59 +6,52 @@ export async function diagnoseFarmIssue(prompt: string, imageDataUri: string | n
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
-  // Using gemini-1.5-flash which is multimodal. Using v1beta as it has better multimodal support.
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
+  // 1. Updated Model: gemini-3-flash-preview
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
 
   const parts: any[] = [{ text: prompt }];
 
   if (imageDataUri) {
-    // data URI format: 'data:<mimetype>;base64,<encoded_data>'
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.+)$/);
     if (match) {
-        const mimeType = match[1];
-        const base64Data = match[2];
-        parts.push({
-            inline_data: {
-                mime_type: mimeType,
-                data: base64Data,
-            }
-        });
-    } else {
-        console.error("Invalid data URI format. Could not include image in prompt.");
+      const mimeType = match[1];
+      const base64Data = match[2];
+      parts.push({
+        inline_data: {
+          mime_type: mimeType,
+          data: base64Data,
+        }
+      });
     }
   }
-
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+        "x-goog-api-key": apiKey, // Use header for security
       },
       body: JSON.stringify({
-        contents: [ { parts } ],
+        contents: [{ parts }],
+        generationConfig: {
+          // 2. Updated Media Resolution Format
+          mediaResolution: { level: "MEDIA_RESOLUTION_HIGH" }, 
+          // 3. New Gemini 3 "Thinking" parameter
+          thinkingConfig: { thinkingLevel: "low" }
+        }
       }),
     });
 
     if (!response.ok) {
       const errorBody = await response.json();
-      console.error("Google AI API Error:", errorBody);
-      const errorMessage = errorBody.error?.message || 'Unknown API error';
-      throw new Error(`API request failed with status ${response.status}: ${errorMessage}`);
+      throw new Error(`API error ${response.status}: ${errorBody.error?.message}`);
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      console.error("No text found in API response:", data);
-      throw new Error("Failed to extract diagnosis from API response.");
-    }
-    
-    return text;
+    return data.candidates?.[0]?.content?.parts?.[0]?.text;
   } catch (error: any) {
-    console.error("Error in diagnoseFarmIssue flow:", error);
+    console.error("Diagnosis Error:", error);
     throw error;
   }
 }
