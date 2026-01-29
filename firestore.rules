@@ -71,7 +71,11 @@ service cloud.firestore {
       allow delete: if false;
 
       function hasCorrectRoleOnCreate() {
-        let allowedRoles = ['farmer', 'student', 'user'];
+        let allowedRoles = {
+          'farmer': true,
+          'student': true,
+          'user': true
+        };
         return request.resource.data.role in allowedRoles;
       }
       
