@@ -1,26 +1,28 @@
 "use server";
 
-export async function diagnoseFarmIssue(prompt: string, imageDataUri: string | null) {
+export async function diagnoseFarmIssue(
+  prompt: string,
+  imageDataUri: string | null
+) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
-  // 1. Updated Model: gemini-3-flash-preview
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
+  // ✅ Stable Gemini 2.5 Flash model
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
   const parts: any[] = [{ text: prompt }];
 
   if (imageDataUri) {
     const match = imageDataUri.match(/^data:(image\/\w+);base64,(.+)$/);
     if (match) {
-      const mimeType = match[1];
-      const base64Data = match[2];
       parts.push({
         inline_data: {
-          mime_type: mimeType,
-          data: base64Data,
-        }
+          mime_type: match[1],
+          data: match[2],
+        },
       });
     }
   }
@@ -30,26 +32,35 @@ export async function diagnoseFarmIssue(prompt: string, imageDataUri: string | n
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey, // Use header for security
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        contents: [{ parts }],
+        contents: [
+          {
+            role: "user",
+            parts,
+          },
+        ],
         generationConfig: {
-          // 2. Updated Media Resolution Format
-          mediaResolution: { level: "MEDIA_RESOLUTION_HIGH" }, 
-          // 3. New Gemini 3 "Thinking" parameter
-          thinkingConfig: { thinkingLevel: "low" }
-        }
+          temperature: 0.4,
+          maxOutputTokens: 2048,
+        },
       }),
     });
 
     if (!response.ok) {
       const errorBody = await response.json();
-      throw new Error(`API error ${response.status}: ${errorBody.error?.message}`);
+      console.error("Gemini API error:", errorBody);
+      throw new Error(
+        `API error ${response.status}: ${errorBody.error?.message}`
+      );
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ??
+      "No response from Gemini"
+    );
   } catch (error: any) {
     console.error("Diagnosis Error:", error);
     throw error;
