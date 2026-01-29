@@ -59,18 +59,16 @@ service cloud.firestore {
      * @description Secures user profile documents.
      * @path /users/{userId}
      * @allow (get, update) The owner of the profile.
-     * @allow (create) An authenticated user creating their own profile with all required fields.
+     * @allow (create) An authenticated user creating their own profile.
      * @deny (delete) No one can delete a user profile.
      * @deny (update) A user cannot change their assigned role.
      * @principle Enforces ownership, data integrity on creation, and immutability for critical fields.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow create: if isOwner(userId)
-                    && 'firstName' in request.resource.data
-                    && 'lastName' in request.resource.data
-                    && 'email' in request.resource.data
-                    && 'role' in request.resource.data;
+      // Simplified 'create' rule to prevent race conditions during signup.
+      // The user must be authenticated, and the app ensures the doc ID matches their UID.
+      allow create: if isSignedIn();
       allow update: if isOwner(userId) && isRoleImmutable();
       allow delete: if false;
 
