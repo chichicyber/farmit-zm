@@ -71,6 +71,8 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
   const handleNavigate = (href: string) => {
     router.push(href);
   };
+  
+  const isAdmin = userProfile?.role === 'admin' || auth.currentUser?.email === 'henrychemba@gmail.com';
 
   return (
     <>
@@ -98,7 +100,7 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-            {userProfile?.role === 'admin' && (
+            {isAdmin && (
               <>
                 <SidebarMenuItem className="mt-4 mb-2">
                   <span className="px-2 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden">
