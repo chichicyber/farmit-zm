@@ -10,6 +10,16 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, updateDoc, query } from 'firebase/firestore';
+
+type AnimalData = {
+  id: string;
+  tagId: string;
+  animalType: string;
+  locationLatitude: number;
+  locationLongitude: number;
+};
 
 type AnimalLocation = {
   id: string;
@@ -18,20 +28,12 @@ type AnimalLocation = {
   position: { lat: number; lng: number };
 };
 
-// Center of Lusaka, Zambia - as a fallback
 const LUSAKA_CENTER = { lat: -15.416667, lng: 28.283333 };
 
 const fields = [
     { name: 'North Pasture', center: { lat: -15.40, lng: 28.29 }, radius: 0.02 },
     { name: 'East Field', center: { lat: -15.43, lng: 28.31 }, radius: 0.015 },
     { name: 'Main Homestead', center: { lat: LUSAKA_CENTER.lat, lng: LUSAKA_CENTER.lng }, radius: 0.05 },
-];
-
-const getInitialAnimalLocations = (): AnimalLocation[] => [
-    { id: '1', tagId: 'ZM-C-001', type: 'Cattle', position: { lat: -15.40, lng: 28.29 } }, // in North Pasture
-    { id: '2', tagId: 'ZM-G-015', type: 'Goat', position: { lat: -15.42, lng: 28.27 } }, // in Main Homestead
-    { id: '3', tagId: 'ZM-P-120', type: 'Chicken', position: { lat: -15.43, lng: 28.30 } }, // in East Field
-    { id: '4', tagId: 'ZM-C-005', type: 'Cattle', position: { lat: -15.48, lng: 28.32 } }, // outside all fences
 ];
 
 const isOutsideGeofence = (position: { lat: number; lng: number }, field: typeof fields[0]) => {
@@ -42,7 +44,6 @@ const isOutsideGeofence = (position: { lat: number; lng: number }, field: typeof
     return dist > field.radius;
 };
 
-// Custom icons
 const defaultIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconSize: [25, 41],
@@ -61,7 +62,6 @@ const outOfBoundsIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Component to update map view when center changes
 function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
@@ -71,43 +71,63 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export default function AnimalMap() {
-  const [locations, setLocations] = useState<AnimalLocation[]>(getInitialAnimalLocations());
+  const { user } = useAuth();
+  const firestore = useFirestore();
+  const [locations, setLocations] = useState<AnimalLocation[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
   const [selectedField, setSelectedField] = useState(fields[0]);
   const [time, setTime] = useState(new Date());
 
-  const simulateMovement = () => {
-    setLocations(prevLocations =>
-      prevLocations.map(animal => {
+  const animalsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'animal_tracking'));
+  }, [user, firestore]);
+
+  const { data: animalData } = useCollection<AnimalData>(animalsQuery);
+
+  useEffect(() => {
+    if (animalData) {
+      const mappedLocations = animalData.map(animal => ({
+        id: animal.id,
+        tagId: animal.tagId,
+        type: animal.animalType,
+        position: { lat: animal.locationLatitude, lng: animal.locationLongitude }
+      }));
+      setLocations(mappedLocations);
+    }
+  }, [animalData]);
+
+  const simulateMovement = async () => {
+    if (!user || !firestore) return;
+    
+    const updates = locations.map(animal => {
         const outOfBounds = isOutsideGeofence(animal.position, selectedField);
         let newLat = animal.position.lat;
         let newLng = animal.position.lng;
-        const movementFactor = 0.0005; // controls speed of movement
+        const movementFactor = 0.0005;
 
         if (outOfBounds) {
-          // Move towards the center of the selected field if they wander off
-          const angle = Math.atan2(
-            selectedField.center.lat - animal.position.lat,
-            selectedField.center.lng - animal.position.lng
-          );
+          const angle = Math.atan2(selectedField.center.lat - animal.position.lat, selectedField.center.lng - animal.position.lng);
           newLat += Math.sin(angle) * movementFactor;
           newLng += Math.cos(angle) * movementFactor;
         } else {
-          // Move randomly
           newLat += (Math.random() - 0.5) * movementFactor;
           newLng += (Math.random() - 0.5) * movementFactor;
         }
-        
-        return {
-          ...animal,
-          position: {
-            lat: newLat,
-            lng: newLng,
-          },
-        };
-      })
-    );
-    setTime(new Date());
+
+        const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', animal.id);
+        return updateDoc(animalRef, {
+            locationLatitude: newLat,
+            locationLongitude: newLng,
+        });
+    });
+
+    try {
+        await Promise.all(updates);
+        setTime(new Date());
+    } catch (error) {
+        console.error("Error simulating movement: ", error);
+    }
   };
 
   const handleFieldChange = (fieldName: string) => {

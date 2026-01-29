@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -49,62 +48,70 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const cropSchema = z.object({
-  name: z.string().min(1, 'Crop name is required'),
+  cropType: z.string().min(1, 'Crop type is required'),
   plantingDate: z.string().min(1, 'Planting date is required'),
   growthStage: z.string().min(1, 'Growth stage is required'),
-  expectedHarvest: z.string().min(1, 'Expected harvest date is required'),
+  expectedHarvestDate: z.string().min(1, 'Expected harvest date is required'),
 });
 
-type Crop = z.infer<typeof cropSchema> & { id: string };
-
-const initialCrops: Crop[] = [
-  {
-    id: '1',
-    name: 'Maize Field A',
-    plantingDate: new Date('2023-11-15').toISOString(),
-    growthStage: 'Vegetative',
-    expectedHarvest: new Date('2024-04-10').toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Soyabeans Plot 3',
-    plantingDate: new Date('2023-12-01').toISOString(),
-    growthStage: 'Flowering',
-    expectedHarvest: new Date('2024-05-01').toISOString(),
-  },
-];
+type Crop = z.infer<typeof cropSchema> & { 
+  id: string; 
+  userId: string;
+  plantingDate: string;
+  expectedHarvestDate: string;
+};
 
 const growthStages = ['Planting', 'Germination', 'Vegetative', 'Flowering', 'Harvesting'];
 
 export default function CropsPage() {
-  const [crops, setCrops] = useState<Crop[]>(initialCrops);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const cropsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'crop_tracking'), orderBy('plantingDate', 'desc'));
+  }, [user, firestore]);
+
+  const { data: crops, isLoading } = useCollection<Crop>(cropsQuery);
 
   const form = useForm<z.infer<typeof cropSchema>>({
     resolver: zodResolver(cropSchema),
     defaultValues: {
-      name: '',
+      cropType: '',
       plantingDate: '',
       growthStage: '',
-      expectedHarvest: '',
+      expectedHarvestDate: '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof cropSchema>) => {
-    const newCrop: Crop = {
-      id: (crops.length + 1).toString(),
-      ...values,
-    };
-    setCrops([...crops, newCrop]);
-    toast({
-      title: 'Success!',
-      description: `${values.name} has been added to your records.`,
-    });
-    form.reset();
-    setIsDialogOpen(false);
+  const onSubmit = async (values: z.infer<typeof cropSchema>) => {
+    if (!user || !firestore) {
+      toast({ title: 'Error', description: 'You must be logged in to add a crop.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await addDoc(collection(firestore, 'users', user.uid, 'crop_tracking'), {
+        ...values,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+      toast({
+        title: 'Success!',
+        description: `${values.cropType} has been added to your records.`,
+      });
+      form.reset();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding crop:", error);
+      toast({ title: 'Error Adding Crop', description: 'There was a problem saving your crop data.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -136,7 +143,7 @@ export default function CropsPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="cropType"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Crop/Field Name</FormLabel>
@@ -184,7 +191,7 @@ export default function CropsPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="expectedHarvest"
+                    name="expectedHarvestDate"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Expected Harvest Date</FormLabel>
@@ -209,7 +216,10 @@ export default function CropsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle>Your Crops</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -221,14 +231,28 @@ export default function CropsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {crops.map((crop) => (
-                  <TableRow key={crop.id}>
-                    <TableCell className="font-medium">{crop.name}</TableCell>
-                    <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
-                    <TableCell>{crop.growthStage}</TableCell>
-                    <TableCell>{format(new Date(crop.expectedHarvest), 'PPP')}</TableCell>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      <Skeleton className="h-8 w-full" />
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : crops && crops.length > 0 ? (
+                  crops.map((crop) => (
+                    <TableRow key={crop.id}>
+                      <TableCell className="font-medium">{crop.cropType}</TableCell>
+                      <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
+                      <TableCell>{crop.growthStage}</TableCell>
+                      <TableCell>{format(new Date(crop.expectedHarvestDate), 'PPP')}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      No crops found. Add your first crop record to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>

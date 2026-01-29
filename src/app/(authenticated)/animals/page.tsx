@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,6 +18,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Form,
   FormControl,
@@ -46,108 +56,121 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { Map, PlusCircle, Pencil } from 'lucide-react';
+import { Map, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
-  type: z.string().min(1, 'Animal type is required'),
+  animalType: z.string().min(1, 'Animal type is required'),
   healthStatus: z.string().min(1, 'Health status is required'),
   lastVaccination: z.string().min(1, 'Last vaccination date is required'),
 });
 
 type Animal = z.infer<typeof animalSchema> & { id: string };
 
-const initialAnimals: Animal[] = [
-  {
-    id: '1',
-    tagId: 'ZM-C-001',
-    type: 'Cattle',
-    healthStatus: 'Healthy',
-    lastVaccination: new Date('2024-03-20').toISOString(),
-  },
-  {
-    id: '2',
-    tagId: 'ZM-G-015',
-    type: 'Goat',
-    healthStatus: 'Under Observation',
-    lastVaccination: new Date('2024-05-10').toISOString(),
-  },
-   {
-    id: '3',
-    tagId: 'ZM-P-120',
-    type: 'Chicken',
-    healthStatus: 'Healthy',
-    lastVaccination: new Date('2024-06-01').toISOString(),
-  },
-];
-
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
 const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
 const filterAnimalTypes = ['All', ...animalTypes];
+const LUSAKA_CENTER = { lat: -15.416667, lng: 28.283333 };
 
 export default function AnimalsPage() {
-  const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
+  const { user } = useAuth();
+  const firestore = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
 
+  const animalsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'animal_tracking'), orderBy('tagId'));
+  }, [user, firestore]);
+
+  const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
+
   const form = useForm<z.infer<typeof animalSchema>>({
     resolver: zodResolver(animalSchema),
     defaultValues: {
       tagId: '',
-      type: '',
+      animalType: '',
       healthStatus: '',
       lastVaccination: '',
     },
   });
 
-  const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
-    const newAnimal: Animal = {
-      id: (animals.length + 1).toString(),
-      ...values,
-    };
-    setAnimals([...animals, newAnimal]);
-    toast({
-      title: 'Success!',
-      description: `Animal with tag ${values.tagId} has been added.`,
-    });
-    form.reset();
-    setIsAddDialogOpen(false);
+  const onAddSubmit = async (values: z.infer<typeof animalSchema>) => {
+    if (!user || !firestore) return;
+    try {
+      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
+        ...values,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+        locationLatitude: LUSAKA_CENTER.lat,
+        locationLongitude: LUSAKA_CENTER.lng,
+      });
+      toast({
+        title: 'Success!',
+        description: `Animal with tag ${values.tagId} has been added.`,
+      });
+      form.reset();
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding animal: ", error);
+      toast({ title: 'Error', description: 'Could not add animal.', variant: 'destructive' });
+    }
   };
   
   const handleEditOpen = (animal: Animal) => {
     setEditingAnimal(animal);
-    const formattedDate = format(new Date(animal.lastVaccination), 'yyyy-MM-dd');
+    const formattedDate = animal.lastVaccination ? format(new Date(animal.lastVaccination), 'yyyy-MM-dd') : '';
     form.reset({ ...animal, lastVaccination: formattedDate });
     setIsEditDialogOpen(true);
   };
 
-  const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
-    if (!editingAnimal) return;
-    
-    setAnimals(animals.map(animal => 
-        animal.id === editingAnimal.id ? { ...animal, ...values, lastVaccination: new Date(values.lastVaccination).toISOString() } : animal
-    ));
-    
-    toast({
-        title: 'Success!',
-        description: `Animal with tag ${values.tagId} has been updated.`,
-    });
-    
-    form.reset();
-    setEditingAnimal(null);
-    setIsEditDialogOpen(false);
+  const onEditSubmit = async (values: z.infer<typeof animalSchema>) => {
+    if (!editingAnimal || !user || !firestore) return;
+    try {
+      const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
+      await updateDoc(animalRef, {
+        ...values,
+        lastVaccination: new Date(values.lastVaccination).toISOString(),
+      });
+      toast({
+          title: 'Success!',
+          description: `Animal with tag ${values.tagId} has been updated.`,
+      });
+      form.reset();
+      setEditingAnimal(null);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating animal: ", error);
+      toast({ title: 'Error', description: 'Could not update animal.', variant: 'destructive' });
+    }
   };
 
+  const handleDelete = async (animalId: string) => {
+    if (!user || !firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'users', user.uid, 'animal_tracking', animalId));
+      toast({
+        title: 'Animal record deleted.',
+        variant: 'destructive'
+      });
+    } catch (error) {
+      console.error("Error deleting animal: ", error);
+      toast({ title: 'Error', description: 'Could not delete animal.', variant: 'destructive' });
+    }
+  }
 
-  const filteredAnimals = animals.filter(
-    (animal) => filterType === 'All' || animal.type === filterType
+  const filteredAnimals = animals?.filter(
+    (animal) => filterType === 'All' || animal.animalType === filterType
   );
 
   return (
@@ -158,7 +181,7 @@ export default function AnimalsPage() {
             Animal Tracking
           </h1>
           <p className="text-muted-foreground">
-            Keep records of your livestock&apos;s health and status.
+            Keep records of your livestock's health and status.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -200,7 +223,7 @@ export default function AnimalsPage() {
                   />
                    <FormField
                     control={form.control}
-                    name="type"
+                    name="animalType"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Animal Type</FormLabel>
@@ -299,11 +322,13 @@ export default function AnimalsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAnimals.length > 0 ? (
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={5}><Skeleton className="w-full h-8" /></TableCell></TableRow>
+                ) : filteredAnimals && filteredAnimals.length > 0 ? (
                   filteredAnimals.map((animal) => (
                     <TableRow key={animal.id}>
                       <TableCell className="font-medium">{animal.tagId}</TableCell>
-                      <TableCell>{animal.type}</TableCell>
+                      <TableCell>{animal.animalType}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -326,6 +351,26 @@ export default function AnimalsPage() {
                             <Pencil />
                             <span className="sr-only">Edit Animal</span>
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="text-destructive" />
+                              <span className="sr-only">Delete Animal</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the animal record for tag {animal.tagId}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(animal.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))
@@ -371,7 +416,7 @@ export default function AnimalsPage() {
               />
               <FormField
                 control={form.control}
-                name="type"
+                name="animalType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Animal Type</FormLabel>
