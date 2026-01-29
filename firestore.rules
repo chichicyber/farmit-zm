@@ -5,8 +5,8 @@
  * and manage their own information.
  *
  * Data Structure: The data is organized into two main categories:
- * 1. User-Private Data: All data specific to a user (tracking for crops and 
- *    animals, reminders) is nested under the `/users/{userId}` path. This creates
+ * 1. User-Private Data: All data specific to a user (profiles, tracking for crops 
+ *    and animals, reminders) is nested under the `/users/{userId}` path. This creates
  *    a secure, isolated data tree for each user.
  * 2. Public Content: Educational lessons, which are intended for everyone, are
  *    stored in top-level collections like `/crop_lessons` and `/animal_lessons`.
@@ -15,13 +15,11 @@
  * - User Data Isolation: A user can only read or write documents within their own
  *   `/users/{userId}` path. Access to other users' data is strictly prohibited.
  * - Public Read-Only Content: The lesson collections are publicly readable by 
- *   anyone, including unauthenticated users, to support educational access. 
- *   However, all client-side write operations to these collections are disabled 
- *   to protect the integrity of the content. Content must be managed through the 
- *   Firebase Console or a trusted admin server.
+ *   anyone, to support educational access. All client-side write operations to 
+ *   these collections are disabled to protect content integrity.
  * - Denormalization for Authorization: User-specific documents (e.g., reminders)
  *   contain a denormalized `userId` field. This allows security rules to validate
- *   ownership directly from the document without performing costly and slow lookups
+ *   ownership directly from the document without performing slow lookups
  *   on parent documents, resulting in faster and more reliable security.
  * - No User Listing: The rules do not allow listing the `/users` collection,
  *   preventing any user from discovering the identities of other users on the platform.
@@ -34,56 +32,58 @@ service cloud.firestore {
     // Helper Functions
     // -------------------------------------------------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the authenticated user's UID matches the provided userId.
-     * This is the fundamental check for data ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * For update/delete operations, checks ownership AND ensures the document exists.
-     * This prevents modification requests on non-existent documents.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * On create, validates that the incoming document's `userId` field
-     * matches the `userId` from the path, ensuring relational integrity.
-     */
     function hasCorrectUserIdOnCreate(userId) {
       return request.resource.data.userId == userId;
     }
-
-    /**
-     * On update, ensures the `userId` field cannot be changed, preventing
-     * documents from being reassigned to other users.
-     */
+    
     function isUserIdImmutable() {
       return request.resource.data.userId == resource.data.userId;
     }
 
     // -------------------------------------------------------------------------
-    // User-Specific Data
+    // User Profile Data
+    // -------------------------------------------------------------------------
+    /**
+     * @description Secures user profile documents.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own profile upon signup.
+     * @allow (read, update) The owner of the profile.
+     * @deny (delete) No one can delete a user profile.
+     * @deny (update) A user cannot change their assigned role.
+     * @principle Enforces ownership and immutability for critical fields.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && hasCorrectRoleOnCreate();
+      allow update: if isOwner(userId) && isRoleImmutable();
+      allow delete: if false;
+
+      function hasCorrectRoleOnCreate() {
+        let allowedRoles = ['farmer', 'student', 'user'];
+        return request.resource.data.role in allowedRoles;
+      }
+      
+      function isRoleImmutable() {
+          return request.resource.data.role == resource.data.role;
+      }
+    }
+    
+    // -------------------------------------------------------------------------
+    // User-Specific Subcollections
     // -------------------------------------------------------------------------
 
-    /**
-     * @description Secures crop tracking documents, allowing only the owner to access them.
-     * @path /users/{userId}/crop_tracking/{cropTrackingId}
-     * @allow (create) An authenticated user with UID 'user123' creating a document at `/users/user123/crop_tracking/new_doc`.
-     * @deny (get) User 'user456' trying to read a document at `/users/user123/crop_tracking/some_doc`.
-     * @principle Restricts access to a user's own data tree and enforces ownership.
-     */
     match /users/{userId}/crop_tracking/{cropTrackingId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
@@ -91,13 +91,6 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Secures animal tracking documents, allowing only the owner to access them.
-     * @path /users/{userId}/animal_tracking/{animalTrackingId}
-     * @allow (update) An authenticated user with UID 'user123' updating their own document at `/users/user123/animal_tracking/my_cow`.
-     * @deny (list) An unauthenticated user trying to list documents at `/users/user123/animal_tracking`.
-     * @principle Restricts access to a user's own data tree and enforces ownership.
-     */
     match /users/{userId}/animal_tracking/{animalTrackingId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
@@ -105,13 +98,6 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Secures reminder documents, allowing only the owner to access them.
-     * @path /users/{userId}/reminders/{reminderId}
-     * @allow (delete) An authenticated user with UID 'user123' deleting a document at `/users/user123/reminders/old_reminder`.
-     * @deny (create) User 'user123' trying to create a reminder with a `userId` field of 'user456'.
-     * @principle Restricts access to a user's own data tree and enforces ownership.
-     */
     match /users/{userId}/reminders/{reminderId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
@@ -119,13 +105,6 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Secures saved AI advice, allowing only the owner to access it.
-     * @path /users/{userId}/advices/{adviceId}
-     * @allow (create) An authenticated user creating advice for themselves.
-     * @deny (get) A user trying to read another user's saved advice.
-     * @principle Restricts access to a user's own data tree and enforces ownership.
-     */
     match /users/{userId}/advices/{adviceId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
@@ -137,33 +116,14 @@ service cloud.firestore {
     // Public Educational Content
     // -------------------------------------------------------------------------
 
-    /**
-     * @description Allows public, read-only access to all crop lessons.
-     * @path /crop_lessons/{cropLessonId}
-     * @allow (get) Any user, including unauthenticated ones, reading `/crop_lessons/planting_basics`.
-     * @deny (create) Any authenticated user trying to create a new crop lesson document.
-     * @principle Provides public read access for shared content while protecting it from client-side modification.
-     */
     match /crop_lessons/{cropLessonId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow write: if false;
     }
 
-    /**
-     * @description Allows public, read-only access to all animal lessons.
-     * @path /animal_lessons/{animalLessonId}
-     * @allow (list) Any user, including unauthenticated ones, listing all documents in the `/animal_lessons` collection.
-     * @deny (update) Any authenticated user trying to update an existing animal lesson document.
-     * @principle Provides public read access for shared content while protecting it from client-side modification.
-     */
     match /animal_lessons/{animalLessonId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow write: if false;
     }
   }
 }
-    

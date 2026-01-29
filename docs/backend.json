@@ -1,5 +1,41 @@
 {
   "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the application.",
+          "enum": [
+            "farmer",
+            "student",
+            "user"
+          ]
+        }
+      },
+      "required": [
+        "firstName",
+        "lastName",
+        "email",
+        "role"
+      ]
+    },
     "CropLesson": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CropLesson",
@@ -254,11 +290,27 @@
   "firestore": {
     "structure": [
       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/entities/UserProfile"
+          },
+          "description": "Stores public profile information for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
         "path": "/users/{userId}/crop_tracking/{cropTrackingId}",
         "definition": {
           "entityName": "CropTracking",
           "schema": {
-            "$ref": "#/backend/entities/CropTracking"
+            "$ref": "#/entities/CropTracking"
           },
           "description": "Stores crop tracking data for each user. Includes denormalized 'userId' for authorization independence.",
           "params": [
@@ -278,7 +330,7 @@
         "definition": {
           "entityName": "AnimalTracking",
           "schema": {
-            "$ref": "#/backend/entities/AnimalTracking"
+            "$ref": "#/entities/AnimalTracking"
           },
           "description": "Stores animal tracking data for each user. Includes denormalized 'userId' for authorization independence.",
           "params": [
@@ -298,7 +350,7 @@
         "definition": {
           "entityName": "Reminder",
           "schema": {
-            "$ref": "#/backend/entities/Reminder"
+            "$ref": "#/entities/Reminder"
           },
           "description": "Stores reminder data for each user. Includes denormalized 'userId' for authorization independence.",
           "params": [
@@ -318,7 +370,7 @@
         "definition": {
           "entityName": "Advice",
           "schema": {
-            "$ref": "#/backend/entities/Advice"
+            "$ref": "#/entities/Advice"
           },
           "description": "Stores saved AI advice for each user. Includes denormalized 'userId' for authorization independence.",
           "params": [
@@ -338,7 +390,7 @@
         "definition": {
           "entityName": "CropLesson",
           "schema": {
-            "$ref": "#/backend/entities/CropLesson"
+            "$ref": "#/entities/CropLesson"
           },
           "description": "Stores crop lesson data, accessible to all users.",
           "params": [
@@ -354,7 +406,7 @@
         "definition": {
           "entityName": "AnimalLesson",
           "schema": {
-            "$ref": "#/backend/entities/AnimalLesson"
+            "$ref": "#/entities/AnimalLesson"
           },
           "description": "Stores animal lesson data, accessible to all users.",
           "params": [
@@ -366,7 +418,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  All user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under the `/users/{userId}` path. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
+    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  A `UserProfile` document is now stored at `/users/{userId}`. All other user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under subcollections of this user document. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
   }
 }
-    

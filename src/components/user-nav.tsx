@@ -11,28 +11,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth as useAppAuth } from '@/hooks/use-auth';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
+type UserProfile = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+};
 
 export function UserNav() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAppAuth();
+  const auth = useAuth();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!auth.currentUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', auth.currentUser.uid);
+  }, [auth.currentUser?.uid, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleLogout = async () => {
     await logout();
     router.push('/login');
   };
 
+  const fallbackName = userProfile
+    ? `${userProfile.firstName[0]}${userProfile.lastName[0]}`
+    : user?.email?.[0].toUpperCase() ?? <UserIcon />;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? ''} />
-            <AvatarFallback>
-              {user?.email?.[0].toUpperCase() ?? <UserIcon />}
-            </AvatarFallback>
+            <AvatarImage
+              src={user?.photoURL ?? ''}
+              alt={user?.displayName ?? ''}
+            />
+            <AvatarFallback>{fallbackName}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -40,7 +63,9 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user?.displayName ?? 'User'}
+              {userProfile
+                ? `${userProfile.firstName} ${userProfile.lastName}`
+                : user?.displayName ?? 'User'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
