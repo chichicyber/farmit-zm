@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -7,7 +8,6 @@ import {
   useMemoFirebase,
 } from '@/firebase';
 import { collection, doc, Timestamp } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -63,7 +63,7 @@ export default function UserStatisticsPage({
     () => (firestore ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userRef);
+  const { data: user, isLoading: isUserLoading, error: userError } = useDoc<UserProfile>(userRef);
 
   const cropsQuery = useMemoFirebase(
     () =>
@@ -139,16 +139,56 @@ export default function UserStatisticsPage({
       fill: 'hsl(var(--destructive))',
     },
   ];
+  
+  if (isUserLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
-  if (!isUserLoading && !user) {
-    notFound();
+  if (userError) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+              <Card className="w-full max-w-md">
+                  <CardHeader>
+                      <CardTitle className="text-destructive">Error Loading User</CardTitle>
+                      <CardDescription>There was a problem retrieving the user data. This could be due to a network issue or insufficient permissions.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <p className="text-sm text-muted-foreground">Please check the console for more details and ensure you have the correct permissions to view this page.</p>
+                      <Button asChild variant="outline" className="mt-4">
+                          <Link href="/admin">Back to User List</Link>
+                      </Button>
+                  </CardContent>
+              </Card>
+          </div>
+      )
+  }
+
+  if (!user) {
+     return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+              <Card className="w-full max-w-md">
+                  <CardHeader>
+                      <CardTitle>User Not Found</CardTitle>
+                      <CardDescription>The requested user does not exist.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Button asChild variant="outline" className="mt-4">
+                          <Link href="/admin">Back to User List</Link>
+                      </Button>
+                  </CardContent>
+              </Card>
+          </div>
+      )
   }
 
   const userInitial = user
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`
     : '?';
   const isLoading =
-    isUserLoading ||
     areCropsLoading ||
     areAnimalsLoading ||
     areAdvicesLoading ||
@@ -157,32 +197,19 @@ export default function UserStatisticsPage({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-4">
-        {isUserLoading ? (
-          <Skeleton className="h-20 w-20 rounded-full" />
-        ) : (
-          <Avatar className="h-20 w-20 border">
-            <AvatarFallback className="text-2xl">{userInitial}</AvatarFallback>
-          </Avatar>
-        )}
+        <Avatar className="h-20 w-20 border">
+          <AvatarFallback className="text-2xl">{userInitial}</AvatarFallback>
+        </Avatar>
         <div className="flex flex-col gap-1">
-          {isUserLoading ? (
-            <>
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-6 w-32" />
-            </>
-          ) : (
-            <>
-              <h1 className="text-3xl font-bold font-headline tracking-tight">
-                {user?.firstName} {user?.lastName}
-              </h1>
-              <div className="flex items-center gap-2">
-                <p className="text-muted-foreground">{user?.email}</p>
-                <Badge variant="secondary" className="capitalize">
-                  {user?.role}
-                </Badge>
-              </div>
-            </>
-          )}
+          <h1 className="text-3xl font-bold font-headline tracking-tight">
+            {user?.firstName} {user?.lastName}
+          </h1>
+          <div className="flex items-center gap-2">
+            <p className="text-muted-foreground">{user?.email}</p>
+            <Badge variant="secondary" className="capitalize">
+              {user?.role}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -340,3 +367,5 @@ function StatCard({
     </Card>
   );
 }
+
+    
