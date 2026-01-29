@@ -15,7 +15,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth as useAppAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import {
   Bot,
@@ -26,9 +26,16 @@ import {
   Tractor,
   Map,
   HeartPulse,
+  Shield,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
+type UserProfile = {
+  role: string;
+};
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -41,12 +48,22 @@ const navItems = [
   { href: '/reminders', label: 'Reminders', icon: Bell },
 ];
 
+const adminNavItems = [{ href: '/admin', label: 'User Management', icon: Shield }];
+
 function AuthenticatedLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const auth = useAuth();
+  const firestore = useFirestore();
 
-  // This effect will close the mobile menu whenever the page route changes.
+  const userProfileRef = useMemoFirebase(() => {
+    if (!auth.currentUser?.uid || !firestore) return null;
+    return doc(firestore, 'users', auth.currentUser.uid);
+  }, [auth.currentUser?.uid, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
   useEffect(() => {
     setOpenMobile(false);
   }, [pathname, setOpenMobile]);
@@ -66,7 +83,7 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  isActive={pathname === item.href}
+                  isActive={pathname.startsWith(item.href) && item.href !== '/'}
                   className={cn(
                     'group-data-[collapsible=icon]:justify-center'
                   )}
@@ -81,6 +98,33 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+            {userProfile?.role === 'admin' && (
+              <>
+                <SidebarMenuItem className="mt-4 mb-2">
+                  <span className="px-2 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden">
+                    Admin
+                  </span>
+                </SidebarMenuItem>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith(item.href)}
+                      className={cn(
+                        'group-data-[collapsible=icon]:justify-center'
+                      )}
+                      onClick={() => handleNavigate(item.href)}
+                      tooltip={{
+                        children: item.label,
+                        className: 'group-data-[collapsible=icon]:block hidden',
+                      }}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -105,7 +149,7 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAppAuth();
   const router = useRouter();
 
   useEffect(() => {

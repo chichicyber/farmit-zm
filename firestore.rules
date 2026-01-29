@@ -3,22 +3,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for Admin role
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     function isAdmin() {
       // Check if the user is authenticated and if their role in the /users/{uid} document is 'admin'
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Rule for the user's profile document
     match /users/{userId} {
-      // Allow access if the user is the owner of the document OR if the user is an admin.
-      allow read, write: if request.auth.uid == userId || isAdmin();
+      // Admins can read any user document, users can only read their own.
+      allow get: if isOwner(userId) || isAdmin();
+      // Admins can list all users.
+      allow list: if isAdmin();
+      // Users can create their own profile, admins can create any profile.
+      allow create: if isOwner(userId) || isAdmin();
+       // Admins can update any user document, users can only update their own.
+      allow update: if isOwner(userId) || isAdmin();
+      // No one can delete user profiles from the client.
+      allow delete: if false;
     }
 
     // Rule for all user subcollections (e.g., crop_tracking, animal_tracking, reminders)
     match /users/{userId}/{subcollection}/{docId} {
        // Allow access if the user is the owner of the parent document OR if the user is an admin.
-      allow read, write: if request.auth.uid == userId || isAdmin();
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     // Rules for public, read-only lesson collections
