@@ -1,3 +1,4 @@
+
 import { Leaf } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -17,7 +18,7 @@ export function Logo({ className }: { className?: string }) {
       </div>
       <div className="group-data-[collapsible=icon]:hidden">
         <h1 className="font-headline text-xl font-bold tracking-tight text-foreground">
-          FarmIt-ZM
+          Farmit-ZM
         </h1>
       </div>
     </Link>
