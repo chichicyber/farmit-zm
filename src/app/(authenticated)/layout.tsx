@@ -25,6 +25,7 @@ import {
   Bell,
   Tractor,
   Map,
+  HeartPulse,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/animals', label: 'Animal Tracking', icon: Rabbit },
   { href: '/animals/map', label: 'Animal Map', icon: Map },
   { href: '/ai-advisor', label: 'AI Advisor', icon: Bot },
+  { href: '/farm-doctor', label: 'Farm Doctor', icon: HeartPulse },
   { href: '/reminders', label: 'Reminders', icon: Bell },
 ];
 
