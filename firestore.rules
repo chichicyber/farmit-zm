@@ -2,9 +2,38 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // TEMPORARY DEBUGGING RULE - INSECURE
-      allow read, write: if true;
+
+    // Helper function to check for Admin role
+    function isAdmin() {
+      // Check if the user is authenticated and if their role in the /users/{uid} document is 'admin'
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Rule for the user's profile document
+    match /users/{userId} {
+      // Allow access if the user is the owner of the document OR if the user is an admin.
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Rule for all user subcollections (e.g., crop_tracking, animal_tracking, reminders)
+    match /users/{userId}/{subcollection}/{docId} {
+       // Allow access if the user is the owner of the parent document OR if the user is an admin.
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Rules for public, read-only lesson collections
+    match /crop_lessons/{lessonId} {
+      // Allow any authenticated user to read lessons.
+      allow read: if request.auth != null;
+      // Do not allow writing to lessons through the client SDK.
+      allow write: if false;
+    }
+
+    match /animal_lessons/{animalLessonId} {
+       // Allow any authenticated user to read lessons.
+      allow read: if request.auth != null;
+       // Do not allow writing to lessons through the client SDK.
+      allow write: if false;
     }
   }
 }
