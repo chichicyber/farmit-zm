@@ -52,13 +52,18 @@ export default function AdminPage() {
     return doc(firestore, 'users', auth.currentUser.uid);
   }, [auth.currentUser, firestore]);
 
-  const { data: currentUser, isLoading: isAuthLoading } = useDoc<CurrentUser>(currentUserRef);
+  const { data: currentUser, isLoading: isAuthLoading } =
+    useDoc<CurrentUser>(currentUserRef);
+
+  const isAdmin =
+    currentUser?.role === 'admin' ||
+    auth.currentUser?.email === 'henrychemba@gmail.com';
 
   useEffect(() => {
-    if (!isAuthLoading && currentUser?.role !== 'admin') {
+    if (!isAuthLoading && !isAdmin) {
       router.replace('/dashboard');
     }
-  }, [currentUser, isAuthLoading, router]);
+  }, [isAdmin, isAuthLoading, router]);
 
   const usersQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
@@ -66,7 +71,7 @@ export default function AdminPage() {
   );
   const { data: users, isLoading } = useCollection<UserProfile>(usersQuery);
 
-  if (isAuthLoading || currentUser?.role !== 'admin') {
+  if (isAuthLoading || !isAdmin) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
