@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -60,19 +60,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleAnonymousSignIn = async () => {
-    try {
-      await signInAnonymously(auth);
-      router.push('/dashboard');
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Anonymous Sign-In Failed',
-        description: error.message || 'An unexpected error occurred.',
-      });
-    }
-  };
-  
   const bgImage = PlaceHolderImages.find(p => p.id === 'login-background');
 
   return (
@@ -145,19 +132,6 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
-           <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                Or
-                </span>
-            </div>
-          </div>
-          <Button variant="outline" className="w-full" onClick={handleAnonymousSignIn} disabled={form.formState.isSubmitting}>
-            Sign in Anonymously
-          </Button>
         </CardFooter>
       </Card>
     </div>
