@@ -76,6 +76,7 @@ export default function SignupPage() {
       const user = userCredential.user;
 
       await setDoc(doc(firestore, 'users', user.uid), {
+        uid: user.uid,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,

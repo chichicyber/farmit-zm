@@ -6,6 +6,10 @@
       "type": "object",
       "description": "Represents a user's profile information.",
       "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique identifier, matching the Auth UID."
+        },
         "firstName": {
           "type": "string",
           "description": "The user's first name."
@@ -30,6 +34,7 @@
         }
       },
       "required": [
+        "uid",
         "firstName",
         "lastName",
         "email",
