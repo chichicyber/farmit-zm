@@ -66,17 +66,9 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUserProfileData(request.resource.data);
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId) && isRoleImmutable();
       allow delete: if false;
-
-      function isValidUserProfileData(data) {
-        let allowedRoles = ['farmer', 'student', 'user'];
-        return data.firstName is string && data.firstName.size() > 0 &&
-               data.lastName is string && data.lastName.size() > 0 &&
-               data.email is string &&
-               data.role is string && data.role in allowedRoles;
-      }
       
       function isRoleImmutable() {
           return request.resource.data.role == resource.data.role;
