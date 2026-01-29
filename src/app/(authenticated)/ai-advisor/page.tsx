@@ -25,6 +25,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 
 const formSchema = z.object({
@@ -50,6 +52,8 @@ export default function AiAdvisorPage() {
     setRecommendation('');
     try {
       const prompt = `You are an expert agricultural advisor. Based on the crop type and its current growth stage, provide actionable recommendations to optimize farming practices and improve yield.
+
+Format your response using markdown for clarity, including headings, lists, and bold text where appropriate.
 
 Crop Type: ${values.cropType}
 Growth Stage: ${values.growthStage}
@@ -169,7 +173,7 @@ Recommendations:`;
                     </div>
                 ) : recommendation ? (
                     <div className="prose prose-sm max-w-none text-foreground">
-                        <p>{recommendation}</p>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{recommendation}</ReactMarkdown>
                     </div>
                 ) : (
                     <div className="text-center text-muted-foreground py-10">

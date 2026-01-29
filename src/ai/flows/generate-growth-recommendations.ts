@@ -6,14 +6,16 @@ export async function generateRecommendation(prompt: string) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
-  // Explicitly use the v1 endpoint with the gemini-pro model
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+  // 1. Update to v1beta and the Gemini 3 Flash model string
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // 2. Use the x-goog-api-key header for Gemini 3 series
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
         contents: [
@@ -21,6 +23,12 @@ export async function generateRecommendation(prompt: string) {
             parts: [{ text: prompt }],
           },
         ],
+        // 3. Optional: Add Gemini 3 specific configuration
+        generationConfig: {
+          temperature: 1.0,
+          // Gemini 3 Flash supports thinkingLevel: "minimal", "low", "medium", or "high"
+          thinkingConfig: { thinkingLevel: "low" } 
+        }
       }),
     });
 
@@ -32,7 +40,6 @@ export async function generateRecommendation(prompt: string) {
     }
 
     const data = await response.json();
-    // Safely access the response text
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
@@ -43,7 +50,6 @@ export async function generateRecommendation(prompt: string) {
     return text;
   } catch (error: any) {
     console.error("Error in generateRecommendation flow:", error);
-    // Re-throw the original error to be caught by the UI's error handler
     throw error;
   }
 }
