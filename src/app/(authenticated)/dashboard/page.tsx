@@ -54,6 +54,12 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      <Link href="/farm-doctor" passHref>
+        <Button variant="destructive" className="w-full animate-shake md:w-auto">
+          <HeartPulse /> Farm Doctor
+        </Button>
+      </Link>
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -86,11 +92,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          <Link href="/farm-doctor" passHref>
-            <Button variant="destructive" className="w-full animate-shake">
-              <HeartPulse /> Farm Doctor
-            </Button>
-          </Link>
           <Link href="/crops" passHref>
             <Button className="w-full">
               <PlusCircle /> Add New Crop
