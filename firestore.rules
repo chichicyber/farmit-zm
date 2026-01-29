@@ -1,11 +1,11 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model for all 
- * user-generated content and provides public, read-only access to shared educational 
- * materials. The primary goal is data isolation, ensuring users can only access 
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for all
+ * user-generated content and provides public, read-only access to shared educational
+ * materials. The primary goal is data isolation, ensuring users can only access
  * and manage their own information.
  *
  * Data Structure: The data is organized into two main categories:
- * 1. User-Private Data: All data specific to a user (profiles, tracking for crops 
+ * 1. User-Private Data: All data specific to a user (profiles, tracking for crops
  *    and animals, reminders) is nested under the `/users/{userId}` path. This creates
  *    a secure, isolated data tree for each user.
  * 2. Public Content: Educational lessons, which are intended for everyone, are
@@ -14,8 +14,8 @@
  * Key Security Decisions:
  * - User Data Isolation: A user can only read or write documents within their own
  *   `/users/{userId}` path. Access to other users' data is strictly prohibited.
- * - Public Read-Only Content: The lesson collections are publicly readable by 
- *   anyone, to support educational access. All client-side write operations to 
+ * - Public Read-Only Content: The lesson collections are publicly readable by
+ *   anyone, to support educational access. All client-side write operations to
  *   these collections are disabled to protect content integrity.
  * - Denormalization for Authorization: User-specific documents (e.g., reminders)
  *   contain a denormalized `userId` field. This allows security rules to validate
@@ -47,7 +47,7 @@ service cloud.firestore {
     function hasCorrectUserIdOnCreate(userId) {
       return request.resource.data.userId == userId;
     }
-    
+
     function isUserIdImmutable() {
       return request.resource.data.userId == resource.data.userId;
     }
@@ -58,23 +58,27 @@ service cloud.firestore {
     /**
      * @description Secures user profile documents.
      * @path /users/{userId}
-     * @allow (create) An authenticated user creating their own profile upon signup.
-     * @allow (read, update) The owner of the profile.
+     * @allow (get, update) The owner of the profile.
+     * @allow (create) An authenticated user creating their own profile with all required fields.
      * @deny (delete) No one can delete a user profile.
      * @deny (update) A user cannot change their assigned role.
-     * @principle Enforces ownership and immutability for critical fields.
+     * @principle Enforces ownership, data integrity on creation, and immutability for critical fields.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && 'firstName' in request.resource.data
+                    && 'lastName' in request.resource.data
+                    && 'email' in request.resource.data
+                    && 'role' in request.resource.data;
       allow update: if isOwner(userId) && isRoleImmutable();
       allow delete: if false;
-      
+
       function isRoleImmutable() {
           return request.resource.data.role == resource.data.role;
       }
     }
-    
+
     // -------------------------------------------------------------------------
     // User-Specific Subcollections
     // -------------------------------------------------------------------------
