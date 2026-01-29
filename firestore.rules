@@ -74,7 +74,7 @@ service cloud.firestore {
         let allowedRoles = ['farmer', 'student', 'user'];
         return data.firstName is string && data.firstName.size() > 0 &&
                data.lastName is string && data.lastName.size() > 0 &&
-               data.email is string && data.email == request.auth.token.email &&
+               data.email is string &&
                data.role is string && data.role in allowedRoles;
       }
       
