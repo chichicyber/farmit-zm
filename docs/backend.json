@@ -31,6 +31,11 @@
             "student",
             "user"
           ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account was created."
         }
       },
       "required": [
@@ -284,6 +289,42 @@
         "recommendation",
         "createdAt"
       ]
+    },
+    "Diagnosis": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Diagnosis",
+      "type": "object",
+      "description": "Represents a saved AI-generated diagnosis for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the diagnosis record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Diagnosis)"
+        },
+        "question": {
+          "type": "string",
+          "description": "The user's question to the Farm Doctor."
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "The AI-generated diagnosis text, in markdown format."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the diagnosis was saved.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "question",
+        "diagnosis",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -385,6 +426,26 @@
             {
               "name": "adviceId",
               "description": "The ID of the advice document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/diagnoses/{diagnosisId}",
+        "definition": {
+          "entityName": "Diagnosis",
+          "schema": {
+            "$ref": "#/entities/Diagnosis"
+          },
+          "description": "Stores saved AI diagnoses for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the diagnosis data."
+            },
+            {
+              "name": "diagnosisId",
+              "description": "The ID of the diagnosis document."
             }
           ]
         }

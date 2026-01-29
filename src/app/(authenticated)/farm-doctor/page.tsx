@@ -28,9 +28,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/use-auth';
+import { useFirestore } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
-  question: z.string().min(10, 'Please describe the issue in at least 10 characters.'),
+  question: z
+    .string()
+    .min(10, 'Please describe the issue in at least 10 characters.'),
   photoDataUri: z.string().optional(),
 });
 
@@ -40,6 +45,8 @@ export default function FarmDoctorPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -77,6 +84,20 @@ Your Analysis:`;
 
       const result = await diagnoseFarmIssue(prompt, values.photoDataUri || null);
       setDiagnosis(result);
+
+      if (user && firestore) {
+        try {
+          await addDoc(collection(firestore, 'users', user.uid, 'diagnoses'), {
+            userId: user.uid,
+            question: values.question,
+            diagnosis: result,
+            createdAt: serverTimestamp(),
+          });
+        } catch (e) {
+          console.error('Could not save diagnosis', e);
+          // We won't show a toast for this error to not bother the user
+        }
+      }
     } catch (error: any) {
       console.error(error);
       const description =
@@ -155,14 +176,23 @@ Your Analysis:`;
                       Take or Upload Photo
                     </Button>
                   </div>
-                  
+
                   {imagePreview && (
                     <div className="relative aspect-video w-full overflow-hidden rounded-md">
-                        <Image src={imagePreview} alt="Selected preview" fill className="object-cover" />
+                      <Image
+                        src={imagePreview}
+                        alt="Selected preview"
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
                     {isLoading ? 'Diagnosing...' : 'Get Diagnosis'}
                   </Button>
                 </form>
@@ -194,7 +224,7 @@ Your Analysis:`;
                 </div>
               ) : (
                 <div className="py-10 text-center text-muted-foreground">
-                   <Bot className="mx-auto h-12 w-12" />
+                  <Bot className="mx-auto h-12 w-12" />
                   <p className="mt-4">Your diagnosis will appear here.</p>
                 </div>
               )}
