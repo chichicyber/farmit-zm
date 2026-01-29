@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { PlusCircle, Shield } from 'lucide-react';
+import { PlusCircle, Shield, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,6 +87,7 @@ const addUserSchema = z.object({
 });
 
 const userRoles = ['farmer', 'student', 'user', 'admin'];
+const filterRoles = ['All', ...userRoles];
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -94,6 +95,8 @@ export default function AdminPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('All');
 
   const addUserForm = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
@@ -182,6 +185,22 @@ export default function AdminPage() {
     [firestore]
   );
   const { data: users, isLoading } = useCollection<UserProfile>(usersQuery);
+
+  const filteredUsers = users?.filter((user) => {
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const email = user.email.toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+
+    const roleMatch =
+      filterRole === 'All' ||
+      user.role === filterRole ||
+      (filterRole === 'admin' && user.email === 'henrychemba@gmail.com');
+
+    const searchMatch =
+      fullName.includes(searchLower) || email.includes(searchLower);
+
+    return roleMatch && searchMatch;
+  });
 
   if (isAuthLoading || !isAdmin) {
     return (
@@ -333,10 +352,41 @@ export default function AdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>
-            A list of all users who have registered on the platform.
-          </CardDescription>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>All Users</CardTitle>
+              <CardDescription>
+                A list of all users who have registered on the platform.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterRoles.map((role) => (
+                    <SelectItem
+                      key={role}
+                      value={role}
+                      className="capitalize"
+                    >
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -363,37 +413,47 @@ export default function AdminPage() {
                       </TableCell>
                     </TableRow>
                   </>
-                ) : users && users.length > 0 ? (
-                  users.map((user) => {
-                    const displayRole = user.email === 'henrychemba@gmail.com' ? 'admin' : user.role;
+                ) : filteredUsers && filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => {
+                    const displayRole =
+                      user.email === 'henrychemba@gmail.com'
+                        ? 'admin'
+                        : user.role;
                     return (
-                    <TableRow key={user.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {user.firstName} {user.lastName}
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            displayRole === 'admin' ? 'destructive' : 'secondary'
-                          }
-                          className="capitalize"
-                        >
-                          {displayRole}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/admin/users/${user.id}`}>
-                            View Account
-                          </Link>
-                        </Button>
-                        <Button variant="secondary" size="sm" className="ml-2">
-                          Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )})
+                      <TableRow key={user.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {user.firstName} {user.lastName}
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              displayRole === 'admin'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            className="capitalize"
+                          >
+                            {displayRole}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/admin/users/${user.id}`}>
+                              View Account
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="ml-2"
+                          >
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
