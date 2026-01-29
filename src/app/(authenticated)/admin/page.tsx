@@ -346,18 +346,19 @@ export default function AdminPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <>
                     <TableRow>
-                      <TableCell colSpan={3}>
+                      <TableCell colSpan={4}>
                         <Skeleton className="h-8 w-full" />
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={3}>
+                      <TableCell colSpan={4}>
                         <Skeleton className="h-8 w-full" />
                       </TableCell>
                     </TableRow>
@@ -368,12 +369,7 @@ export default function AdminPage() {
                     return (
                     <TableRow key={user.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
-                        <Link
-                          href={`/admin/users/${user.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          {user.firstName} {user.lastName}
-                        </Link>
+                        {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
@@ -386,11 +382,21 @@ export default function AdminPage() {
                           {displayRole}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/admin/users/${user.id}`}>
+                            View Account
+                          </Link>
+                        </Button>
+                        <Button variant="secondary" size="sm" className="ml-2">
+                          Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   )})
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       No users found.
                     </TableCell>
                   </TableRow>
