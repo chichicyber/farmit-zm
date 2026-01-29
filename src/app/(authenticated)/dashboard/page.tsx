@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bell, Tractor, Rabbit, PlusCircle, Sun, Cloud, CloudRain } from 'lucide-react';
+import { Bell, Tractor, Rabbit, PlusCircle, Sun, Cloud, CloudRain, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import {
   ChartContainer,
@@ -86,6 +86,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
+          <Link href="/farm-doctor" passHref>
+            <Button variant="destructive" className="w-full animate-shake">
+              <HeartPulse /> Farm Doctor
+            </Button>
+          </Link>
           <Link href="/crops" passHref>
             <Button className="w-full">
               <PlusCircle /> Add New Crop

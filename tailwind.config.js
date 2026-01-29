@@ -87,10 +87,16 @@ module.exports = {
             height: '0',
           },
         },
+        shake: {
+          '0%, 90%, 100%': { transform: 'rotate(0deg)' },
+          '92%, 96%': { transform: 'rotate(3deg)' },
+          '94%, 98%': { transform: 'rotate(-3deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        shake: 'shake 5s cubic-bezier(.36,.07,.19,.97) infinite',
       },
     },
   },
