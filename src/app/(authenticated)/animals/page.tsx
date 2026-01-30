@@ -86,6 +86,7 @@ export default function AnimalsPage() {
   const firestore = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
@@ -108,82 +109,103 @@ export default function AnimalsPage() {
     },
   });
 
-  const onAddSubmit = async (values: z.infer<typeof animalSchema>) => {
+  const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
     if (!user || !firestore) return;
-    try {
-      const newAnimal = await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
+    setIsSubmitting(true);
+
+    const animalCollectionRef = collection(firestore, 'users', user.uid, 'animal_tracking');
+    const remindersCollectionRef = collection(firestore, 'users', user.uid, 'reminders');
+
+    addDoc(animalCollectionRef, {
         ...values,
         userId: user.uid,
         createdAt: serverTimestamp(),
         locationLatitude: LUSAKA_CENTER.lat,
         locationLongitude: LUSAKA_CENTER.lng,
-      });
+    })
+    .then(newAnimalRef => {
+        // Once the animal is added, create the reminder.
+        addDoc(remindersCollectionRef, {
+            userId: user.uid,
+            task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
+            dueDate: new Date(values.nextVaccinationDate),
+            isCompleted: false,
+            category: 'Animals',
+            priority: 'High',
+            relatedDocId: newAnimalRef.id,
+        }).catch(error => {
+            console.error("Error adding reminder:", error);
+            toast({ title: 'Reminder Failed', description: 'Could not set vaccination reminder.', variant: 'destructive' });
+        });
 
-      // Create a reminder for vaccination
-      await addDoc(collection(firestore, 'users', user.uid, 'reminders'), {
-        userId: user.uid,
-        task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
-        dueDate: new Date(values.nextVaccinationDate),
-        isCompleted: false,
-        category: 'Animals',
-        priority: 'High',
-        relatedDocId: newAnimal.id,
-      });
-
-      toast({
-        title: 'Success!',
-        description: `Animal with tag ${values.tagId} has been added and a vaccination reminder has been set.`,
-      });
-      form.reset();
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error("Error adding animal: ", error);
-      toast({ title: 'Error', description: 'Could not add animal.', variant: 'destructive' });
-    }
+        toast({
+            title: 'Success!',
+            description: `Animal with tag ${values.tagId} has been added and a vaccination reminder has been set.`,
+        });
+        form.reset();
+        setIsAddDialogOpen(false);
+    })
+    .catch(error => {
+        console.error("Error adding animal: ", error);
+        toast({ title: 'Error', description: 'Could not add animal.', variant: 'destructive' });
+    })
+    .finally(() => {
+        setIsSubmitting(false);
+    });
   };
   
   const handleEditOpen = (animal: any) => {
     setEditingAnimal(animal);
-    const formattedDate = animal.nextVaccinationDate ? format(new Date(animal.nextVaccinationDate), 'yyyy-MM-dd') : '';
+    const formattedDate = animal.nextVaccinationDate instanceof Date 
+      ? format(animal.nextVaccinationDate, 'yyyy-MM-dd')
+      : animal.nextVaccinationDate.split('T')[0];
+
     form.reset({ ...animal, nextVaccinationDate: formattedDate });
     setIsEditDialogOpen(true);
   };
 
-  const onEditSubmit = async (values: z.infer<typeof animalSchema>) => {
+  const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
     if (!editingAnimal || !user || !firestore) return;
-    try {
-      const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
-      await updateDoc(animalRef, {
-        ...values,
-        nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
-      });
-      // Note: This simplified version does not update existing reminders. A more complex implementation would be needed for that.
-      toast({
-          title: 'Success!',
-          description: `Animal with tag ${values.tagId} has been updated.`,
-      });
-      form.reset();
-      setEditingAnimal(null);
-      setIsEditDialogOpen(false);
-    } catch (error) {
-      console.error("Error updating animal: ", error);
-      toast({ title: 'Error', description: 'Could not update animal.', variant: 'destructive' });
-    }
+    setIsSubmitting(true);
+
+    const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
+    updateDoc(animalRef, {
+      ...values,
+      nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
+    })
+    .then(() => {
+        toast({
+            title: 'Success!',
+            description: `Animal with tag ${values.tagId} has been updated.`,
+        });
+        form.reset();
+        setEditingAnimal(null);
+        setIsEditDialogOpen(false);
+    })
+    .catch((error) => {
+        console.error("Error updating animal: ", error);
+        toast({ title: 'Error', description: 'Could not update animal.', variant: 'destructive' });
+    })
+    .finally(() => {
+        setIsSubmitting(false);
+    });
   };
 
-  const handleDelete = async (animalId: string) => {
+  const handleDelete = (animal: Animal) => {
     if (!user || !firestore) return;
-    try {
-      await deleteDoc(doc(firestore, 'users', user.uid, 'animal_tracking', animalId));
-      // Note: This does not delete associated reminders. A more complex implementation would handle that.
-      toast({
-        title: 'Animal record deleted.',
-        variant: 'destructive'
+
+    deleteDoc(doc(firestore, 'users', user.uid, 'animal_tracking', animal.id))
+      .then(() => {
+        toast({
+          title: 'Animal record deleted.',
+          description: `The record for tag ${animal.tagId} has been removed.`,
+          variant: "destructive"
+        });
+      })
+      .catch((error) => {
+        console.error("Error deleting animal: ", error);
+        toast({ title: 'Error', description: 'Could not delete animal.', variant: 'destructive' });
       });
-    } catch (error) {
-      console.error("Error deleting animal: ", error);
-      toast({ title: 'Error', description: 'Could not delete animal.', variant: 'destructive' });
-    }
   }
 
   const filteredAnimals = animals?.filter(
@@ -312,7 +334,9 @@ export default function AnimalsPage() {
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Save Record</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? 'Saving...' : 'Save Record'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -397,7 +421,7 @@ export default function AnimalsPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(animal.id)}>Delete</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(animal)}>Delete</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -518,7 +542,9 @@ export default function AnimalsPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -527,3 +553,5 @@ export default function AnimalsPage() {
     </div>
   );
 }
+
+    
