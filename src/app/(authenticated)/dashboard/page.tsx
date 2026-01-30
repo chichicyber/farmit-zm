@@ -25,7 +25,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -36,19 +36,20 @@ import {
 } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+import { format, addMonths } from 'date-fns';
 
-const chartData = [
-  { month: 'Jan', desktop: 186 },
-  { month: 'Feb', desktop: 305 },
-  { month: 'Mar', desktop: 237 },
-  { month: 'Apr', desktop: 273 },
-  { month: 'May', desktop: 209 },
-  { month: 'Jun', desktop: 214 },
-];
+type Crop = {
+  id: string;
+  userId: string;
+  cropType: string;
+  plantingDate: string;
+  expectedHarvestDate: string;
+};
 
 const chartConfig = {
   desktop: {
-    label: 'Yield',
+    label: 'Crops',
     color: 'hsl(var(--primary))',
   },
 } satisfies ChartConfig;
@@ -71,8 +72,7 @@ export default function DashboardPage() {
         : null,
     [user, firestore]
   );
-  const { data: crops, isLoading: areCropsLoading } =
-    useCollection(cropsQuery);
+  const { data: crops, isLoading: areCropsLoading } = useCollection<Crop>(cropsQuery);
 
   const animalsQuery = useMemoFirebase(
     () =>
@@ -99,6 +99,42 @@ export default function DashboardPage() {
 
   const isLoading =
     areCropsLoading || areAnimalsLoading || areRemindersLoading;
+
+  const yieldChartData = useMemo(() => {
+    if (!crops || crops.length === 0) {
+      return [];
+    }
+
+    const now = new Date();
+    const nextSixMonths = Array.from({ length: 6 }, (_, i) => addMonths(now, i));
+
+    const monthlyHarvests: { [key: string]: number } = nextSixMonths.reduce(
+      (acc, date) => {
+        acc[format(date, 'MMM')] = 0;
+        return acc;
+      },
+      {} as { [key: string]: number }
+    );
+
+    crops.forEach((crop) => {
+      try {
+        const harvestDate = new Date(crop.expectedHarvestDate);
+        if (harvestDate >= now && harvestDate < addMonths(now, 6)) {
+          const month = format(harvestDate, 'MMM');
+          if (month in monthlyHarvests) {
+            monthlyHarvests[month]++;
+          }
+        }
+      } catch (e) {
+        console.error('Invalid date for crop:', crop);
+      }
+    });
+
+    return Object.entries(monthlyHarvests).map(([month, count]) => ({
+      month,
+      desktop: count,
+    }));
+  }, [crops]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -204,26 +240,43 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Yield Projection</CardTitle>
             <CardDescription>
-              Monthly estimated yield based on current data.
+              Crops scheduled for harvest in the next 6 months.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <BarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
-              </BarChart>
-            </ChartContainer>
+            {isLoading ? (
+              <Skeleton className="h-[250px] w-full" />
+            ) : yieldChartData.length > 0 &&
+              yieldChartData.some((d) => d.desktop > 0) ? (
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <BarChart accessibilityLayer data={yieldChartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis allowDecimals={false} />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Bar
+                    dataKey="desktop"
+                    fill="var(--color-desktop)"
+                    radius={8}
+                  />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-[250px] w-full items-center justify-center text-center text-muted-foreground">
+                <p>
+                  No crop data available. <br /> Add a crop to see your yield
+                  projection.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         <div className="flex flex-col gap-6">
