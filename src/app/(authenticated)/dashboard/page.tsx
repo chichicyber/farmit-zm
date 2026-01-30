@@ -36,8 +36,12 @@ import {
 } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { format, addMonths } from 'date-fns';
+import {
+  generateWeatherForecast,
+  type WeatherForecast,
+} from '@/ai/flows/generate-weather-forecast';
 
 type Crop = {
   id: string;
@@ -54,16 +58,58 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const weatherForecast = [
-  { day: 'Today', icon: Sun, temp: '32°C' },
-  { day: 'Tomorrow', icon: Cloud, temp: '29°C' },
-  { day: 'Next Day', icon: CloudRain, temp: '26°C' },
-];
+const weatherIcons: { [key: string]: React.ElementType } = {
+  sunny: Sun,
+  cloudy: Cloud,
+  rainy: CloudRain,
+  'partly-cloudy': Cloud,
+};
 
 export default function DashboardPage() {
   const farmImage = PlaceHolderImages.find((p) => p.id === 'hero-farm');
   const { user } = useAuth();
   const firestore = useFirestore();
+
+  const [forecast, setForecast] = useState<WeatherForecast[] | null>(null);
+  const [isForecastLoading, setIsForecastLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      setIsForecastLoading(true);
+      // Hardcoded Lusaka coordinates for now
+      const lat = -15.416667;
+      const lon = 28.283333;
+      try {
+        const weatherData = await generateWeatherForecast(lat, lon);
+        setForecast(weatherData);
+      } catch (error) {
+        console.error('Failed to fetch weather forecast:', error);
+        setForecast([
+          {
+            day: 'Today',
+            description: 'Could not load',
+            temp: '--°C',
+            condition: 'cloudy',
+          },
+          {
+            day: 'Tomorrow',
+            description: 'Could not load',
+            temp: '--°C',
+            condition: 'cloudy',
+          },
+          {
+            day: 'Next Day',
+            description: 'Could not load',
+            temp: '--°C',
+            condition: 'cloudy',
+          },
+        ]);
+      } finally {
+        setIsForecastLoading(false);
+      }
+    };
+    fetchWeather();
+  }, []);
 
   const cropsQuery = useMemoFirebase(
     () =>
@@ -72,7 +118,8 @@ export default function DashboardPage() {
         : null,
     [user, firestore]
   );
-  const { data: crops, isLoading: areCropsLoading } = useCollection<Crop>(cropsQuery);
+  const { data: crops, isLoading: areCropsLoading } =
+    useCollection<Crop>(cropsQuery);
 
   const animalsQuery = useMemoFirebase(
     () =>
@@ -106,7 +153,9 @@ export default function DashboardPage() {
     }
 
     const now = new Date();
-    const nextSixMonths = Array.from({ length: 6 }, (_, i) => addMonths(now, i));
+    const nextSixMonths = Array.from({ length: 6 }, (_, i) =>
+      addMonths(now, i)
+    );
 
     const monthlyHarvests: { [key: string]: number } = nextSixMonths.reduce(
       (acc, date) => {
@@ -285,18 +334,38 @@ export default function DashboardPage() {
               <CardTitle>Weather Forecast</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {weatherForecast.map((weather) => (
-                <div
-                  key={weather.day}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <weather.icon className="h-6 w-6 text-accent" />
-                    <span>{weather.day}</span>
+              {isForecastLoading ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-12" />
                   </div>
-                  <span className="font-medium">{weather.temp}</span>
-                </div>
-              ))}
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                </>
+              ) : (
+                forecast?.map((weather) => {
+                  const Icon = weatherIcons[weather.condition] || Cloud;
+                  return (
+                    <div
+                      key={weather.day}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-6 w-6 text-accent" />
+                        <span>{weather.day}</span>
+                      </div>
+                      <span className="font-medium">{weather.temp}</span>
+                    </div>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
           {farmImage && (
