@@ -86,7 +86,6 @@ export default function AnimalsPage() {
   const firestore = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
@@ -111,10 +110,13 @@ export default function AnimalsPage() {
 
   const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
     if (!user || !firestore) return;
-    setIsSubmitting(true);
 
     const animalCollectionRef = collection(firestore, 'users', user.uid, 'animal_tracking');
     const remindersCollectionRef = collection(firestore, 'users', user.uid, 'reminders');
+
+    // Close dialog immediately and reset form
+    setIsAddDialogOpen(false);
+    form.reset();
 
     addDoc(animalCollectionRef, {
         ...values,
@@ -135,22 +137,17 @@ export default function AnimalsPage() {
             relatedDocId: newAnimalRef.id,
         }).catch(error => {
             console.error("Error adding reminder:", error);
-            toast({ title: 'Reminder Failed', description: 'Could not set vaccination reminder.', variant: 'destructive' });
+            toast({ title: 'Reminder Failed', description: 'Animal was added, but could not set vaccination reminder.', variant: 'destructive' });
         });
 
         toast({
             title: 'Success!',
             description: `Animal with tag ${values.tagId} has been added and a vaccination reminder has been set.`,
         });
-        form.reset();
-        setIsAddDialogOpen(false);
     })
     .catch(error => {
         console.error("Error adding animal: ", error);
         toast({ title: 'Error', description: 'Could not add animal.', variant: 'destructive' });
-    })
-    .finally(() => {
-        setIsSubmitting(false);
     });
   };
   
@@ -166,9 +163,14 @@ export default function AnimalsPage() {
 
   const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
     if (!editingAnimal || !user || !firestore) return;
-    setIsSubmitting(true);
 
     const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
+    
+    // Close dialog and reset state immediately
+    setIsEditDialogOpen(false);
+    setEditingAnimal(null);
+    form.reset();
+
     updateDoc(animalRef, {
       ...values,
       nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
@@ -178,16 +180,10 @@ export default function AnimalsPage() {
             title: 'Success!',
             description: `Animal with tag ${values.tagId} has been updated.`,
         });
-        form.reset();
-        setEditingAnimal(null);
-        setIsEditDialogOpen(false);
     })
     .catch((error) => {
         console.error("Error updating animal: ", error);
         toast({ title: 'Error', description: 'Could not update animal.', variant: 'destructive' });
-    })
-    .finally(() => {
-        setIsSubmitting(false);
     });
   };
 
@@ -334,8 +330,8 @@ export default function AnimalsPage() {
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Saving...' : 'Save Record'}
+                    <Button type="submit">
+                      Save Record
                     </Button>
                   </DialogFooter>
                 </form>
@@ -542,8 +538,8 @@ export default function AnimalsPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                <Button type="submit">
+                  Save Changes
                 </Button>
               </DialogFooter>
             </form>
@@ -553,5 +549,3 @@ export default function AnimalsPage() {
     </div>
   );
 }
-
-    
