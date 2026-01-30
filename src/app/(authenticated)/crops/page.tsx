@@ -47,7 +47,7 @@ import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -97,14 +97,35 @@ export default function CropsPage() {
       return;
     }
     try {
-      await addDoc(collection(firestore, 'users', user.uid, 'crop_tracking'), {
+      const newCrop = await addDoc(collection(firestore, 'users', user.uid, 'crop_tracking'), {
         ...values,
         userId: user.uid,
         createdAt: serverTimestamp(),
       });
+      
+      const plantingDate = new Date(values.plantingDate);
+
+      const reminders = [
+        { task: `Weed ${values.cropType}`, dueDate: addDays(plantingDate, 14), priority: 'Medium' },
+        { task: `Apply top-dressing fertilizer to ${values.cropType}`, dueDate: addDays(plantingDate, 28), priority: 'High' },
+        { task: `Scout ${values.cropType} for pests`, dueDate: addDays(plantingDate, 42), priority: 'Medium' },
+      ];
+
+      for (const reminder of reminders) {
+        await addDoc(collection(firestore, 'users', user.uid, 'reminders'), {
+          userId: user.uid,
+          task: reminder.task,
+          dueDate: reminder.dueDate,
+          isCompleted: false,
+          category: 'Crops',
+          priority: reminder.priority,
+          relatedDocId: newCrop.id,
+        });
+      }
+
       toast({
         title: 'Success!',
-        description: `${values.cropType} has been added to your records.`,
+        description: `${values.cropType} added and smart reminders have been scheduled.`,
       });
       form.reset();
       setIsDialogOpen(false);

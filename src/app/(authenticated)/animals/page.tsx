@@ -64,12 +64,14 @@ import { z } from 'zod';
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
   animalType: z.string().min(1, 'Animal type is required'),
   healthStatus: z.string().min(1, 'Health status is required'),
-  lastVaccination: z.string().min(1, 'Last vaccination date is required'),
+  nextVaccinationDate: z.string().min(1, 'Next vaccination date is required'),
+  feedingSchedule: z.string().optional(),
 });
 
 type Animal = z.infer<typeof animalSchema> & { id: string };
@@ -101,23 +103,36 @@ export default function AnimalsPage() {
       tagId: '',
       animalType: '',
       healthStatus: '',
-      lastVaccination: '',
+      nextVaccinationDate: '',
+      feedingSchedule: '',
     },
   });
 
   const onAddSubmit = async (values: z.infer<typeof animalSchema>) => {
     if (!user || !firestore) return;
     try {
-      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
+      const newAnimal = await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
         ...values,
         userId: user.uid,
         createdAt: serverTimestamp(),
         locationLatitude: LUSAKA_CENTER.lat,
         locationLongitude: LUSAKA_CENTER.lng,
       });
+
+      // Create a reminder for vaccination
+      await addDoc(collection(firestore, 'users', user.uid, 'reminders'), {
+        userId: user.uid,
+        task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
+        dueDate: new Date(values.nextVaccinationDate),
+        isCompleted: false,
+        category: 'Animals',
+        priority: 'High',
+        relatedDocId: newAnimal.id,
+      });
+
       toast({
         title: 'Success!',
-        description: `Animal with tag ${values.tagId} has been added.`,
+        description: `Animal with tag ${values.tagId} has been added and a vaccination reminder has been set.`,
       });
       form.reset();
       setIsAddDialogOpen(false);
@@ -127,10 +142,10 @@ export default function AnimalsPage() {
     }
   };
   
-  const handleEditOpen = (animal: Animal) => {
+  const handleEditOpen = (animal: any) => {
     setEditingAnimal(animal);
-    const formattedDate = animal.lastVaccination ? format(new Date(animal.lastVaccination), 'yyyy-MM-dd') : '';
-    form.reset({ ...animal, lastVaccination: formattedDate });
+    const formattedDate = animal.nextVaccinationDate ? format(new Date(animal.nextVaccinationDate), 'yyyy-MM-dd') : '';
+    form.reset({ ...animal, nextVaccinationDate: formattedDate });
     setIsEditDialogOpen(true);
   };
 
@@ -140,8 +155,9 @@ export default function AnimalsPage() {
       const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
       await updateDoc(animalRef, {
         ...values,
-        lastVaccination: new Date(values.lastVaccination).toISOString(),
+        nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
       });
+      // Note: This simplified version does not update existing reminders. A more complex implementation would be needed for that.
       toast({
           title: 'Success!',
           description: `Animal with tag ${values.tagId} has been updated.`,
@@ -159,6 +175,7 @@ export default function AnimalsPage() {
     if (!user || !firestore) return;
     try {
       await deleteDoc(doc(firestore, 'users', user.uid, 'animal_tracking', animalId));
+      // Note: This does not delete associated reminders. A more complex implementation would handle that.
       toast({
         title: 'Animal record deleted.',
         variant: 'destructive'
@@ -267,12 +284,25 @@ export default function AnimalsPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="lastVaccination"
+                    name="nextVaccinationDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Vaccination Date</FormLabel>
+                        <FormLabel>Next Vaccination Date</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="feedingSchedule"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Feeding Schedule</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="e.g., 'Twice daily with high-protein feed.'" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -317,7 +347,7 @@ export default function AnimalsPage() {
                   <TableHead>Tag ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Health Status</TableHead>
-                  <TableHead>Last Vaccination</TableHead>
+                  <TableHead>Next Vaccination</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -344,7 +374,7 @@ export default function AnimalsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(animal.lastVaccination), 'PPP')}
+                        {format(new Date(animal.nextVaccinationDate), 'PPP')}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
@@ -460,10 +490,10 @@ export default function AnimalsPage() {
               />
               <FormField
                 control={form.control}
-                name="lastVaccination"
+                name="nextVaccinationDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Vaccination Date</FormLabel>
+                    <FormLabel>Next Vaccination Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -471,6 +501,19 @@ export default function AnimalsPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="feedingSchedule"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Feeding Schedule</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="e.g., 'Twice daily with high-protein feed.'" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>

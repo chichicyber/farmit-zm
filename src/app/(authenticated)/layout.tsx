@@ -20,13 +20,13 @@ import { cn } from '@/lib/utils';
 import {
   Bot,
   Home,
-  BookOpen,
   Rabbit,
   Bell,
   Tractor,
   Map,
   HeartPulse,
   Shield,
+  BrainCircuit,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -39,13 +39,13 @@ type UserProfile = {
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/education', label: 'Education', icon: BookOpen },
+  { href: '/education', label: 'Farmit Smart', icon: BrainCircuit },
   { href: '/crops', label: 'Crop Tracking', icon: Tractor },
   { href: '/animals', label: 'Animal Tracking', icon: Rabbit },
   { href: '/animals/map', label: 'Animal Map', icon: Map },
+  { href: '/reminders', label: 'Reminders', icon: Bell },
   { href: '/ai-advisor', label: 'AI Advisor', icon: Bot },
   { href: '/farm-doctor', label: 'Farm Doctor', icon: HeartPulse },
-  { href: '/reminders', label: 'Reminders', icon: Bell },
 ];
 
 const adminNavItems = [{ href: '/admin', label: 'User Management', icon: Shield }];

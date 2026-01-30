@@ -16,9 +16,9 @@ export default function EducationPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold font-headline tracking-tight">Education Hub</h1>
+        <h1 className="text-3xl font-bold font-headline tracking-tight">Farmit Smart</h1>
         <p className="text-muted-foreground">
-          Learn best practices for crop and animal farming in Zambia.
+          Use smart guides and predictive models to optimize your farm.
         </p>
       </div>
 
@@ -30,7 +30,7 @@ export default function EducationPage() {
                 <Image src={cropImage.imageUrl} alt={cropImage.description} data-ai-hint={cropImage.imageHint} fill className="object-cover"/>
               </div>
             }
-            <CardTitle className="pt-4 text-xl font-headline">Crop Production</CardTitle>
+            <CardTitle className="pt-4 text-xl font-headline">Smart Crop Guides</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
@@ -53,7 +53,7 @@ export default function EducationPage() {
                 <Image src={animalImage.imageUrl} alt={animalImage.description} data-ai-hint={animalImage.imageHint} fill className="object-cover"/>
               </div>
             }
-            <CardTitle className="pt-4 text-xl font-headline">Animal Husbandry</CardTitle>
+            <CardTitle className="pt-4 text-xl font-headline">Smart Animal Guides</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
