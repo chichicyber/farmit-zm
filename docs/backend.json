@@ -141,20 +141,87 @@
         },
         "growthStage": {
           "type": "string",
-          "description": "Current growth stage of the crop (e.g., seedling, flowering)."
-        },
-        "fertilizerUse": {
-          "type": "string",
-          "description": "Type and amount of fertilizer used."
-        },
-        "pesticideUse": {
-          "type": "string",
-          "description": "Type and amount of pesticide used."
+          "description": "Current growth stage of the crop.",
+          "enum": [
+            "planting",
+            "vegetative",
+            "flowering",
+            "fruiting",
+            "harvest"
+          ]
         },
         "expectedHarvestDate": {
           "type": "string",
           "description": "Expected date of harvest.",
           "format": "date-time"
+        },
+        "fertilizerSchedule": {
+          "type": "object",
+          "description": "Structured data for fertilizer application.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type of fertilizer."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between applications."
+            },
+            "lastAppliedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last application."
+            },
+            "nextApplicationAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled application."
+            }
+          }
+        },
+        "weedingSchedule": {
+          "type": "object",
+          "description": "Structured data for weeding.",
+          "properties": {
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between weeding sessions."
+            },
+            "lastWeededAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last weeding."
+            },
+            "nextWeedingAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled weeding."
+            }
+          }
+        },
+        "sprayingSchedule": {
+          "type": "object",
+          "description": "Structured data for pesticide/chemical spraying.",
+          "properties": {
+            "chemical": {
+              "type": "string",
+              "description": "Name of the chemical used for spraying."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between spraying."
+            },
+            "lastSprayedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last spraying."
+            },
+            "nextSprayingAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled spraying."
+            }
+          }
         }
       },
       "required": [
@@ -183,17 +250,9 @@
           "type": "string",
           "description": "Type of animal being tracked (e.g., cow, goat)."
         },
-        "feedingSchedule": {
-          "type": "string",
-          "description": "Details of the animal's feeding schedule."
-        },
         "healthStatus": {
           "type": "string",
           "description": "Current health status of the animal."
-        },
-        "vaccinationRecords": {
-          "type": "string",
-          "description": "Records of vaccinations given to the animal."
         },
         "growthMetrics": {
           "type": "string",
@@ -206,6 +265,53 @@
         "locationLongitude": {
           "type": "number",
           "description": "Longitude of the animal's current location."
+        },
+        "feedingSchedule": {
+          "type": "object",
+          "description": "Structured data for animal feeding schedules.",
+          "properties": {
+            "timesPerDay": {
+              "type": "number",
+              "description": "How many times a day the animal is fed."
+            },
+            "timeSlots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "time"
+              },
+              "description": "Specific times for feeding, e.g., ['08:00', '17:00']."
+            },
+            "lastFedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last feeding."
+            }
+          }
+        },
+        "vaccinationSchedule": {
+          "type": "object",
+          "description": "Structured data for animal vaccination schedules.",
+          "properties": {
+            "vaccineName": {
+              "type": "string",
+              "description": "Name of the vaccine."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between vaccinations."
+            },
+            "lastVaccinatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last vaccination."
+            },
+            "nextVaccinationAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled vaccination."
+            }
+          }
         }
       },
       "required": [
@@ -486,3 +592,4 @@
     "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  A `UserProfile` document is now stored at `/users/{userId}`. All other user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under subcollections of this user document. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
   }
 }
+    
