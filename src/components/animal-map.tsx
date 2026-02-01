@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -6,11 +7,19 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { dummyAnimals } from '@/lib/dummy-data';
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type Animal = {
+  id: string;
+  tagId: string;
+  animalType: string;
+  locationLatitude?: number;
+  locationLongitude?: number;
+};
 
 type AnimalLocation = {
   id: string;
@@ -43,17 +52,35 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export default function AnimalMap() {
-    const initialLocations = dummyAnimals.map(animal => ({
-        id: animal.id,
-        tagId: animal.tagId,
-        type: animal.animalType,
-        position: { lat: animal.locationLatitude, lng: animal.locationLongitude }
-    }));
-  
-  const [locations, setLocations] = useState<AnimalLocation[]>(initialLocations);
-  const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
-  const [selectedField, setSelectedField] = useState(fields[0]); // Default to East Chongwe Bush
-  const [time, setTime] = useState(new Date());
+    const { user } = useAuth();
+    const firestore = useFirestore();
+
+    const animalsQuery = useMemoFirebase(
+        () => (user && firestore ? collection(firestore, 'users', user.uid, 'animal_tracking') : null),
+        [user, firestore]
+    );
+    const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
+
+    const [locations, setLocations] = useState<AnimalLocation[]>([]);
+    const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
+    const [selectedField, setSelectedField] = useState(fields[0]);
+
+    useEffect(() => {
+        if (animals) {
+            const validLocations = animals
+                .filter(animal => animal.locationLatitude != null && animal.locationLongitude != null)
+                .map(animal => ({
+                    id: animal.id,
+                    tagId: animal.tagId,
+                    type: animal.animalType,
+                    position: {
+                        lat: animal.locationLatitude!,
+                        lng: animal.locationLongitude!,
+                    },
+                }));
+            setLocations(validLocations);
+        }
+    }, [animals]);
 
     const defaultIcon = useMemo(() => new L.Icon({
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -73,39 +100,89 @@ export default function AnimalMap() {
         shadowSize: [41, 41]
     }), []);
 
-
-  const simulateMovement = () => {
-    const newLocations = locations.map(animal => {
-        const outOfBounds = isOutsideGeofence(animal.position, selectedField);
-        let newLat = animal.position.lat;
-        let newLng = animal.position.lng;
-        const movementFactor = 0.0005;
-
-        if (outOfBounds) {
-          const angle = Math.atan2(selectedField.center.lat - animal.position.lat, selectedField.center.lng - animal.position.lng);
-          newLat += Math.sin(angle) * movementFactor;
-          newLng += Math.cos(angle) * movementFactor;
-        } else {
-          newLat += (Math.random() - 0.5) * movementFactor;
-          newLng += (Math.random() - 0.5) * movementFactor;
+    const handleFieldChange = (fieldName: string) => {
+        const field = fields.find(f => f.name === fieldName);
+        if (field) {
+            setSelectedField(field);
         }
-        
-        return {
-            ...animal,
-            position: { lat: newLat, lng: newLng }
-        };
-    });
+    };
+  
+    const renderContent = () => {
+      if(isLoading) {
+        return (
+          <div className="md:col-span-2">
+            <Card className="h-[70vh]">
+              <CardContent className="p-0 h-full rounded-lg overflow-hidden flex items-center justify-center bg-muted">
+                <Skeleton className="h-full w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
 
-    setLocations(newLocations);
-    setTime(new Date());
-  };
-
-  const handleFieldChange = (fieldName: string) => {
-    const field = fields.find(f => f.name === fieldName);
-    if (field) {
-        setSelectedField(field);
+      if (locations.length === 0) {
+        return (
+          <div className="md:col-span-2">
+            <Card className="h-[70vh]">
+              <CardContent className="p-0 h-full rounded-lg overflow-hidden flex items-center justify-center bg-muted">
+                <p className="text-muted-foreground">No animals with location data found.</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="md:col-span-2">
+           <Card className="h-[70vh]">
+              <CardContent className="p-0 h-full rounded-lg overflow-hidden">
+                  <MapContainer
+                      center={[selectedField.center.lat, selectedField.center.lng]}
+                      zoom={14}
+                      scrollWheelZoom={false}
+                      className="h-full w-full"
+                  >
+                      <ChangeView center={[selectedField.center.lat, selectedField.center.lng]} zoom={14} />
+                      <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      {locations.map((animal) => {
+                          const outOfBounds = isOutsideGeofence(animal.position, selectedField);
+                          return (
+                              <Marker
+                                  key={animal.id}
+                                  position={[animal.position.lat, animal.position.lng]}
+                                  icon={outOfBounds ? outOfBoundsIcon : defaultIcon}
+                                  eventHandlers={{
+                                      click: () => {
+                                          setSelectedAnimal(animal);
+                                      },
+                                  }}
+                              >
+                              </Marker>
+                          );
+                      })}
+                       {selectedAnimal && (
+                          <Popup 
+                              position={[selectedAnimal.position.lat, selectedAnimal.position.lng]}
+                              onClose={() => setSelectedAnimal(null)}
+                          >
+                              <div className="space-y-1 p-1">
+                                  <h3 className="font-bold">Tag ID: {selectedAnimal.tagId}</h3>
+                                  <p>Type: {selectedAnimal.type}</p>
+                                  {isOutsideGeofence(selectedAnimal.position, selectedField) &&
+                                      <Badge variant="destructive">Outside Geofence</Badge>
+                                  }
+                              </div>
+                          </Popup>
+                      )}
+                  </MapContainer>
+              </CardContent>
+          </Card>
+        </div>
+      );
     }
-  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,7 +198,7 @@ export default function AnimalMap() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Map Controls</CardTitle>
-                        <CardDescription>Select a field and manage the view.</CardDescription>
+                        <CardDescription>Select a field to view.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -139,71 +216,13 @@ export default function AnimalMap() {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <Button onClick={simulateMovement} variant="outline" className="w-full">
-                            <RefreshCw /> Simulate Movement
-                        </Button>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Last Update</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl font-bold">{time.toLocaleTimeString()}</p>
-                        <p className="text-xs text-muted-foreground">Location data is updated in real-time.</p>
                     </CardContent>
                 </Card>
             </div>
-
-            <div className="md:col-span-2">
-                 <Card className="h-[70vh]">
-                    <CardContent className="p-0 h-full rounded-lg overflow-hidden">
-                        <MapContainer
-                            center={[selectedField.center.lat, selectedField.center.lng]}
-                            zoom={14}
-                            scrollWheelZoom={false}
-                            className="h-full w-full"
-                        >
-                            <ChangeView center={[selectedField.center.lat, selectedField.center.lng]} zoom={14} />
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            {locations.map((animal) => {
-                                const outOfBounds = isOutsideGeofence(animal.position, selectedField);
-                                return (
-                                    <Marker
-                                        key={animal.id}
-                                        position={[animal.position.lat, animal.position.lng]}
-                                        icon={outOfBounds ? outOfBoundsIcon : defaultIcon}
-                                        eventHandlers={{
-                                            click: () => {
-                                                setSelectedAnimal(animal);
-                                            },
-                                        }}
-                                    >
-                                    </Marker>
-                                );
-                            })}
-                             {selectedAnimal && (
-                                <Popup 
-                                    position={[selectedAnimal.position.lat, selectedAnimal.position.lng]}
-                                    onClose={() => setSelectedAnimal(null)}
-                                >
-                                    <div className="space-y-1 p-1">
-                                        <h3 className="font-bold">Tag ID: {selectedAnimal.tagId}</h3>
-                                        <p>Type: {selectedAnimal.type}</p>
-                                        {isOutsideGeofence(selectedAnimal.position, selectedField) &&
-                                            <Badge variant="destructive">Outside Geofence</Badge>
-                                        }
-                                    </div>
-                                </Popup>
-                            )}
-                        </MapContainer>
-                    </CardContent>
-                </Card>
-            </div>
+            {renderContent()}
         </div>
     </div>
   );
 }
+
+    

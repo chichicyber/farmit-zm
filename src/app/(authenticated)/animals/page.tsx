@@ -73,6 +73,14 @@ const animalSchema = z.object({
   healthStatus: z.string().min(1, 'Health status is required'),
   nextVaccinationDate: z.string().min(1, 'Next vaccination date is required'),
   feedingSchedule: z.string().optional(),
+  locationLatitude: z.preprocess(
+    (a) => (a === '' ? undefined : a),
+    z.coerce.number().optional()
+  ),
+  locationLongitude: z.preprocess(
+    (a) => (a === '' ? undefined : a),
+    z.coerce.number().optional()
+  ),
 });
 
 type AnimalFormData = z.infer<typeof animalSchema>;
@@ -86,6 +94,8 @@ type Animal = {
   nextVaccinationDate: Timestamp;
   feedingSchedule?: string;
   createdAt: Timestamp;
+  locationLatitude?: number;
+  locationLongitude?: number;
 };
 
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
@@ -115,21 +125,29 @@ export default function AnimalsPage() {
       healthStatus: '',
       nextVaccinationDate: '',
       feedingSchedule: '',
+      locationLatitude: undefined,
+      locationLongitude: undefined,
     },
   });
 
   const onAddSubmit = async (values: AnimalFormData) => {
     if (!user || !firestore) return;
 
-    setIsAddDialogOpen(false);
-    form.reset();
-
     try {
       const vaccinationDate = parseISO(values.nextVaccinationDate);
-      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
-        ...values,
+      const dataToAdd: Omit<Animal, 'id' | 'createdAt'> = {
         userId: user.uid,
+        tagId: values.tagId,
+        animalType: values.animalType,
+        healthStatus: values.healthStatus,
         nextVaccinationDate: Timestamp.fromDate(vaccinationDate),
+        feedingSchedule: values.feedingSchedule,
+        locationLatitude: values.locationLatitude,
+        locationLongitude: values.locationLongitude,
+      };
+
+      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
+        ...dataToAdd,
         createdAt: serverTimestamp(),
       });
 
@@ -148,6 +166,10 @@ export default function AnimalsPage() {
           title: 'Success!',
           description: `Animal with tag ${values.tagId} has been added and a reminder has been set.`,
       });
+
+      form.reset();
+      setIsAddDialogOpen(false);
+
     } catch (error) {
         console.error('Error adding animal:', error);
         toast({
@@ -167,7 +189,9 @@ export default function AnimalsPage() {
       animalType: animal.animalType,
       healthStatus: animal.healthStatus,
       nextVaccinationDate: formattedDate,
-      feedingSchedule: animal.feedingSchedule || ''
+      feedingSchedule: animal.feedingSchedule || '',
+      locationLatitude: animal.locationLatitude,
+      locationLongitude: animal.locationLongitude,
     });
     setIsEditDialogOpen(true);
   };
@@ -178,14 +202,18 @@ export default function AnimalsPage() {
     const docRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
     
     try {
-      await updateDoc(docRef, {
+      const dataToUpdate = {
         ...values,
         nextVaccinationDate: Timestamp.fromDate(parseISO(values.nextVaccinationDate)),
-      });
+      };
+      await updateDoc(docRef, dataToUpdate);
       toast({
           title: 'Success!',
           description: `Animal with tag ${values.tagId} has been updated.`,
       });
+      setIsEditDialogOpen(false);
+      setEditingAnimal(null);
+      form.reset();
     } catch (error) {
        console.error('Error updating animal:', error);
         toast({
@@ -194,10 +222,6 @@ export default function AnimalsPage() {
             variant: 'destructive',
         });
     }
-
-    setIsEditDialogOpen(false);
-    setEditingAnimal(null);
-    form.reset();
   };
 
   const handleDelete = async (animal: Animal) => {
@@ -240,7 +264,10 @@ export default function AnimalsPage() {
               <Map /> View Map
             </Button>
           </Link>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => {
+            if(!isOpen) form.reset();
+            setIsAddDialogOpen(isOpen);
+          }}>
             <DialogTrigger asChild>
               <Button className="w-full">
                 <PlusCircle /> Add Animal
@@ -341,6 +368,34 @@ export default function AnimalsPage() {
                       </FormItem>
                     )}
                   />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="locationLatitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Latitude</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="any" placeholder="-15.416" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="locationLongitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Longitude</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="any" placeholder="28.283" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <DialogFooter>
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
@@ -468,7 +523,11 @@ export default function AnimalsPage() {
       </Card>
       
       {/* Edit Animal Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => {
+            if(!isOpen) form.reset();
+            setIsEditDialogOpen(isOpen);
+            if (!isOpen) setEditingAnimal(null);
+        }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Animal Record</DialogTitle>
@@ -564,6 +623,34 @@ export default function AnimalsPage() {
                     </FormItem>
                   )}
                 />
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="locationLatitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Latitude</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="any" placeholder="-15.416" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="locationLongitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Longitude</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="any" placeholder="28.283" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
@@ -579,3 +666,5 @@ export default function AnimalsPage() {
     </div>
   );
 }
+
+    
