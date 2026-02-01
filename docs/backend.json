@@ -242,6 +242,10 @@
           "type": "string",
           "description": "Unique identifier for the animal tracking record."
         },
+        "tagId": {
+          "type": "string",
+          "description": "The unique tag or identifier for the animal."
+        },
         "userId": {
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:N AnimalTracking)"
@@ -317,7 +321,8 @@
       "required": [
         "id",
         "userId",
-        "animalType"
+        "animalType",
+        "tagId"
       ]
     },
     "Reminder": {

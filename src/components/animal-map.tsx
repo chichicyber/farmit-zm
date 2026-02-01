@@ -10,16 +10,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, query } from 'firebase/firestore';
-
-type AnimalData = {
-  id: string;
-  tagId: string;
-  animalType: string;
-  locationLatitude: number;
-  locationLongitude: number;
-};
+import { dummyAnimals } from '@/lib/dummy-data';
 
 type AnimalLocation = {
   id: string;
@@ -71,36 +62,21 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export default function AnimalMap() {
-  const { user } = useAuth();
-  const firestore = useFirestore();
-  const [locations, setLocations] = useState<AnimalLocation[]>([]);
-  const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
-  const [selectedField, setSelectedField] = useState(fields[0]);
-  const [time, setTime] = useState(new Date());
-
-  const animalsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'animal_tracking'));
-  }, [user, firestore]);
-
-  const { data: animalData } = useCollection<AnimalData>(animalsQuery);
-
-  useEffect(() => {
-    if (animalData) {
-      const mappedLocations = animalData.map(animal => ({
+    const initialLocations = dummyAnimals.map(animal => ({
         id: animal.id,
         tagId: animal.tagId,
         type: animal.animalType,
         position: { lat: animal.locationLatitude, lng: animal.locationLongitude }
-      }));
-      setLocations(mappedLocations);
-    }
-  }, [animalData]);
+    }));
+  
+  const [locations, setLocations] = useState<AnimalLocation[]>(initialLocations);
+  const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
+  const [selectedField, setSelectedField] = useState(fields[2]); // Default to Main Homestead
+  const [time, setTime] = useState(new Date());
 
-  const simulateMovement = async () => {
-    if (!user || !firestore) return;
-    
-    const updates = locations.map(animal => {
+
+  const simulateMovement = () => {
+    const newLocations = locations.map(animal => {
         const outOfBounds = isOutsideGeofence(animal.position, selectedField);
         let newLat = animal.position.lat;
         let newLng = animal.position.lng;
@@ -114,20 +90,15 @@ export default function AnimalMap() {
           newLat += (Math.random() - 0.5) * movementFactor;
           newLng += (Math.random() - 0.5) * movementFactor;
         }
-
-        const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', animal.id);
-        return updateDoc(animalRef, {
-            locationLatitude: newLat,
-            locationLongitude: newLng,
-        });
+        
+        return {
+            ...animal,
+            position: { lat: newLat, lng: newLng }
+        };
     });
 
-    try {
-        await Promise.all(updates);
-        setTime(new Date());
-    } catch (error) {
-        console.error("Error simulating movement: ", error);
-    }
+    setLocations(newLocations);
+    setTime(new Date());
   };
 
   const handleFieldChange = (fieldName: string) => {
@@ -237,3 +208,5 @@ export default function AnimalMap() {
     </div>
   );
 }
+
+    
