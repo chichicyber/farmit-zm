@@ -32,6 +32,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { FcmHandler } from '@/components/fcm-handler';
 
 type UserProfile = {
   role: string;
@@ -171,6 +172,7 @@ export default function AuthenticatedLayout({
   return (
     <SidebarProvider>
       <AuthenticatedLayoutContent>{children}</AuthenticatedLayoutContent>
+      <FcmHandler />
     </SidebarProvider>
   );
 }

@@ -436,6 +436,27 @@
         "diagnosis",
         "createdAt"
       ]
+    },
+    "Device": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Device",
+      "type": "object",
+      "description": "Represents a user's device for push notifications.",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Firebase Cloud Messaging (FCM) device token."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the device was registered."
+        }
+      },
+      "required": [
+        "token",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -562,6 +583,26 @@
         }
       },
       {
+        "path": "/users/{userId}/devices/{deviceId}",
+        "definition": {
+          "entityName": "Device",
+          "schema": {
+            "$ref": "#/entities/Device"
+          },
+          "description": "Stores FCM tokens for a user's devices.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the device."
+            },
+            {
+              "name": "deviceId",
+              "description": "The ID of the device document, typically the FCM token."
+            }
+          ]
+        }
+      },
+      {
         "path": "/crop_lessons/{cropLessonId}",
         "definition": {
           "entityName": "CropLesson",
@@ -597,4 +638,3 @@
     "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  A `UserProfile` document is now stored at `/users/{userId}`. All other user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under subcollections of this user document. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
   }
 }
-    
