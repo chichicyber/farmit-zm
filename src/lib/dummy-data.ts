@@ -28,8 +28,8 @@ export const dummyAnimals: Animal[] = [
     healthStatus: 'Healthy',
     nextVaccinationDate: new Date('2024-08-15').toISOString(),
     feedingSchedule: 'Twice daily with high-protein feed.',
-    locationLatitude: -15.401,
-    locationLongitude: 28.291,
+    locationLatitude: -15.3480,
+    locationLongitude: 28.5200,
   },
   {
     id: '2',
@@ -38,8 +38,8 @@ export const dummyAnimals: Animal[] = [
     healthStatus: 'Under Observation',
     nextVaccinationDate: new Date('2024-07-30').toISOString(),
     feedingSchedule: 'Grazing supplemented with pellets.',
-    locationLatitude: -15.402,
-    locationLongitude: 28.289,
+    locationLatitude: -15.2850,
+    locationLongitude: 28.3615,
   },
   {
     id: '3',
@@ -48,8 +48,8 @@ export const dummyAnimals: Animal[] = [
     healthStatus: 'Healthy',
     nextVaccinationDate: new Date('2024-09-01').toISOString(),
     feedingSchedule: 'Layers mash available ad libitum.',
-    locationLatitude: -15.416,
-    locationLongitude: 28.283,
+    locationLatitude: -15.4825,
+    locationLongitude: 28.2155,
   },
   {
     id: '4',
@@ -58,8 +58,8 @@ export const dummyAnimals: Animal[] = [
     healthStatus: 'Sick',
     nextVaccinationDate: new Date('2024-08-20').toISOString(),
     feedingSchedule: 'Swill and commercial pig feed.',
-    locationLatitude: -15.431,
-    locationLongitude: 28.311,
+    locationLatitude: -15.4818,
+    locationLongitude: 28.2145,
   },
   {
     id: '5',
@@ -68,8 +68,8 @@ export const dummyAnimals: Animal[] = [
     healthStatus: 'Healthy',
     nextVaccinationDate: new Date('2024-09-10').toISOString(),
     feedingSchedule: 'Pasture grazing.',
-    locationLatitude: -15.429,
-    locationLongitude: 28.309,
+    locationLatitude: -15.6122,
+    locationLongitude: 28.2958,
   },
 ];
 

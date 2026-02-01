@@ -19,12 +19,11 @@ type AnimalLocation = {
   position: { lat: number; lng: number };
 };
 
-const LUSAKA_CENTER = { lat: -15.416667, lng: 28.283333 };
-
 const fields = [
-    { name: 'North Pasture', center: { lat: -15.40, lng: 28.29 }, radius: 0.02 },
-    { name: 'East Field', center: { lat: -15.43, lng: 28.31 }, radius: 0.015 },
-    { name: 'Main Homestead', center: { lat: LUSAKA_CENTER.lat, lng: LUSAKA_CENTER.lng }, radius: 0.05 },
+    { name: 'East Chongwe Bush', center: { lat: -15.3482, lng: 28.5204 }, radius: 0.0108 },
+    { name: 'Ngwerere North', center: { lat: -15.2855, lng: 28.3611 }, radius: 0.009 },
+    { name: 'Makeni West Farm', center: { lat: -15.4821, lng: 28.2150 }, radius: 0.0135 },
+    { name: 'Shimabala South', center: { lat: -15.6120, lng: 28.2955 }, radius: 0.0099 },
 ];
 
 const isOutsideGeofence = (position: { lat: number; lng: number }, field: typeof fields[0]) => {
@@ -53,7 +52,7 @@ export default function AnimalMap() {
   
   const [locations, setLocations] = useState<AnimalLocation[]>(initialLocations);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
-  const [selectedField, setSelectedField] = useState(fields[2]); // Default to Main Homestead
+  const [selectedField, setSelectedField] = useState(fields[0]); // Default to East Chongwe Bush
   const [time, setTime] = useState(new Date());
 
     const defaultIcon = useMemo(() => new L.Icon({
