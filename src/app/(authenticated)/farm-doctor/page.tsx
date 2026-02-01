@@ -20,8 +20,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bot, Camera, Sparkles, Stethoscope } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Bot, Camera, Sparkles, Stethoscope, Loader2 } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,12 +36,67 @@ const formSchema = z.object({
   question: z
     .string()
     .min(10, 'Please describe the issue in at least 10 characters.'),
-  photoDataUri: z.string().optional(),
 });
+
+// Helper function for client-side image processing
+const resizeAndProcessImage = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      if (!event.target?.result) {
+        return reject(new Error('Failed to read file.'));
+      }
+      const img = document.createElement('img');
+      img.src = event.target.result as string;
+      img.onload = () => {
+        const MAX_SIDE = 1024;
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > MAX_SIDE) {
+            height *= MAX_SIDE / width;
+            width = MAX_SIDE;
+          }
+        } else {
+          if (height > MAX_SIDE) {
+            width *= MAX_SIDE / height;
+            height = MAX_SIDE;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context.'));
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              return reject(new Error('Canvas to Blob conversion failed.'));
+            }
+            resolve(blob);
+          },
+          'image/jpeg',
+          0.8
+        );
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 
 export default function FarmDoctorPage() {
   const [diagnosis, setDiagnosis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
+  const [processedImage, setProcessedImage] = useState<Blob | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -52,20 +107,45 @@ export default function FarmDoctorPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       question: '',
-      photoDataUri: '',
     },
   });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Clean up the object URL to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUri = reader.result as string;
-        setImagePreview(dataUri);
-        form.setValue('photoDataUri', dataUri);
-      };
-      reader.readAsDataURL(file);
+      setIsImageProcessing(true);
+      toast({ title: 'Processing Image...', description: 'Resizing and compressing your photo.' });
+      
+      try {
+        const blob = await resizeAndProcessImage(file);
+        setProcessedImage(blob);
+
+        if (imagePreview) {
+          URL.revokeObjectURL(imagePreview);
+        }
+        setImagePreview(URL.createObjectURL(blob));
+        
+        toast({ title: 'Image Ready!', description: 'Your optimized photo is ready for diagnosis.' });
+      } catch (error) {
+        console.error("Image processing error:", error);
+        toast({ variant: 'destructive', title: 'Image Processing Failed', description: 'Could not process the image. Please try another photo.' });
+        setProcessedImage(null);
+        setImagePreview(null);
+      } finally {
+        setIsImageProcessing(false);
+        // Reset file input to allow selecting the same file again
+        if(fileInputRef.current) fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -74,19 +154,17 @@ export default function FarmDoctorPage() {
     setDiagnosis('');
 
     try {
-      const prompt = `You are an expert veterinarian and botanist, acting as a "Farm Doctor". A farmer needs your help. Based on their question and the provided image, provide a diagnosis and actionable recommendations.
+      const formData = new FormData();
+      formData.append('question', values.question);
+      if (processedImage) {
+        formData.append('image', processedImage, 'diagnosis.jpg');
+      }
 
-Format your response using clear, easy-to-read markdown. Use headings, lists, and bold text for key information like diagnosis, treatment steps, and preventative measures.
-
-Farmer's Question: "${values.question}"
-
-Your Analysis:`;
-
-      const result = await diagnoseFarmIssue(prompt, values.photoDataUri || null);
+      const result = await diagnoseFarmIssue(formData);
       setDiagnosis(result);
 
-      if (user && firestore) {
-        try {
+      if (user && firestore && result) {
+         try {
           await addDoc(collection(firestore, 'users', user.uid, 'diagnoses'), {
             userId: user.uid,
             question: values.question,
@@ -94,19 +172,15 @@ Your Analysis:`;
             createdAt: serverTimestamp(),
           });
         } catch (e) {
-          console.error('Could not save diagnosis', e);
-          // We won't show a toast for this error to not bother the user
+          console.error('Could not save diagnosis to Firestore', e);
         }
       }
     } catch (error: any) {
-      console.error(error);
-      const description =
-        error.message ||
-        'There was a problem getting a diagnosis. Please try again.';
+      console.error("Diagnosis submission error:", error);
       toast({
         variant: 'destructive',
         title: 'Error Generating Diagnosis',
-        description: description,
+        description: error.message || 'An unknown error occurred. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -165,15 +239,21 @@ Your Analysis:`;
                       ref={fileInputRef}
                       onChange={handleFileChange}
                       className="hidden"
+                      disabled={isImageProcessing}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full"
                       onClick={() => fileInputRef.current?.click()}
+                      disabled={isImageProcessing}
                     >
-                      <Camera className="h-4 w-4" />
-                      Take or Upload Photo
+                      {isImageProcessing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="mr-2 h-4 w-4" />
+                      )}
+                      {isImageProcessing ? 'Processing...' : 'Take or Upload Photo'}
                     </Button>
                   </div>
 
@@ -191,8 +271,11 @@ Your Analysis:`;
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isLoading}
+                    disabled={isLoading || isImageProcessing}
                   >
+                    {isLoading ? (
+                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ): null}
                     {isLoading ? 'Diagnosing...' : 'Get Diagnosis'}
                   </Button>
                 </form>
@@ -223,7 +306,7 @@ Your Analysis:`;
                   </ReactMarkdown>
                 </div>
               ) : (
-                <div className="py-10 text-center text-muted-foreground">
+                <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-muted-foreground">
                   <Bot className="mx-auto h-12 w-12" />
                   <p className="mt-4">Your diagnosis will appear here.</p>
                 </div>
