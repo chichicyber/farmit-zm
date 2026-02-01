@@ -64,8 +64,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { dummyAnimals } from '@/lib/dummy-data';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
@@ -85,15 +84,14 @@ const animalSchema = z.object({
 
 type AnimalFormData = z.infer<typeof animalSchema>;
 
+// The component now uses this local type, which uses native Date objects.
 type Animal = {
   id: string;
-  userId: string;
   tagId: string;
   animalType: string;
   healthStatus: string;
-  nextVaccinationDate: Timestamp;
+  nextVaccinationDate: Date;
   feedingSchedule?: string;
-  createdAt: Timestamp;
   locationLatitude?: number;
   locationLongitude?: number;
 };
@@ -102,20 +100,26 @@ const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
 const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
 const filterAnimalTypes = ['All', ...animalTypes];
 
+// We map the raw dummy data into the format the component expects.
+const mappedDummyAnimals: Animal[] = dummyAnimals.map(a => ({
+  id: a.id,
+  tagId: a.tagId,
+  animalType: a.animalType,
+  healthStatus: a.healthStatus,
+  nextVaccinationDate: new Date(a.vaccinationSchedule.nextVaccinationAt),
+  feedingSchedule: `${a.feedingSchedule.frequency} at ${a.feedingSchedule.time}`,
+  locationLatitude: a.locationLatitude,
+  locationLongitude: a.locationLongitude,
+}));
+
 export default function AnimalsPage() {
-  const { user } = useAuth();
-  const firestore = useFirestore();
+  const [animals, setAnimals] = useState<Animal[]>(mappedDummyAnimals);
+  const isLoading = false; // Data is loaded locally
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
-
-  const animalsQuery = useMemoFirebase(
-    () => (user && firestore ? collection(firestore, 'users', user.uid, 'animal_tracking') : null),
-    [user, firestore]
-  );
-  const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
 
   const form = useForm<AnimalFormData>({
     resolver: zodResolver(animalSchema),
@@ -131,58 +135,31 @@ export default function AnimalsPage() {
   });
 
   const onAddSubmit = async (values: AnimalFormData) => {
-    if (!user || !firestore) return;
+    const newAnimal: Animal = {
+      id: new Date().toISOString(), // Simple unique ID for local state
+      tagId: values.tagId,
+      animalType: values.animalType,
+      healthStatus: values.healthStatus,
+      nextVaccinationDate: parseISO(values.nextVaccinationDate),
+      feedingSchedule: values.feedingSchedule,
+      locationLatitude: values.locationLatitude,
+      locationLongitude: values.locationLongitude,
+    };
+    
+    setAnimals(prev => [newAnimal, ...prev]);
 
-    try {
-      const vaccinationDate = parseISO(values.nextVaccinationDate);
-      const dataToAdd: Omit<Animal, 'id' | 'createdAt'> = {
-        userId: user.uid,
-        tagId: values.tagId,
-        animalType: values.animalType,
-        healthStatus: values.healthStatus,
-        nextVaccinationDate: Timestamp.fromDate(vaccinationDate),
-        feedingSchedule: values.feedingSchedule,
-        locationLatitude: values.locationLatitude,
-        locationLongitude: values.locationLongitude,
-      };
+    toast({
+        title: 'Success!',
+        description: `Animal with tag ${values.tagId} has been added to the local list.`,
+    });
 
-      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
-        ...dataToAdd,
-        createdAt: serverTimestamp(),
-      });
-
-      const reminderData = {
-          userId: user.uid,
-          task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
-          dueDate: Timestamp.fromDate(vaccinationDate),
-          isCompleted: false,
-          category: 'Animals',
-          priority: 'High',
-          createdAt: serverTimestamp(),
-      };
-      await addDoc(collection(firestore, 'users', user.uid, 'reminders'), reminderData);
-
-      toast({
-          title: 'Success!',
-          description: `Animal with tag ${values.tagId} has been added and a reminder has been set.`,
-      });
-
-      form.reset();
-      setIsAddDialogOpen(false);
-
-    } catch (error) {
-        console.error('Error adding animal:', error);
-        toast({
-            title: 'Error',
-            description: 'Could not add animal. Please try again.',
-            variant: 'destructive',
-        });
-    }
+    form.reset();
+    setIsAddDialogOpen(false);
   };
   
   const handleEditOpen = (animal: Animal) => {
     setEditingAnimal(animal);
-    const formattedDate = animal.nextVaccinationDate ? format(animal.nextVaccinationDate.toDate(), 'yyyy-MM-dd') : '';
+    const formattedDate = format(animal.nextVaccinationDate, 'yyyy-MM-dd');
       
     form.reset({ 
       tagId: animal.tagId,
@@ -197,50 +174,31 @@ export default function AnimalsPage() {
   };
 
   const onEditSubmit = async (values: AnimalFormData) => {
-    if (!editingAnimal || !user || !firestore) return;
+    if (!editingAnimal) return;
 
-    const docRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
-    
-    try {
-      const dataToUpdate = {
-        ...values,
-        nextVaccinationDate: Timestamp.fromDate(parseISO(values.nextVaccinationDate)),
-      };
-      await updateDoc(docRef, dataToUpdate);
-      toast({
-          title: 'Success!',
-          description: `Animal with tag ${values.tagId} has been updated.`,
-      });
-      setIsEditDialogOpen(false);
-      setEditingAnimal(null);
-      form.reset();
-    } catch (error) {
-       console.error('Error updating animal:', error);
-        toast({
-            title: 'Error',
-            description: 'Could not update animal. Please try again.',
-            variant: 'destructive',
-        });
-    }
+    const updatedAnimal: Animal = {
+      ...editingAnimal,
+      ...values,
+      nextVaccinationDate: parseISO(values.nextVaccinationDate),
+    };
+
+    setAnimals(prev => prev.map(a => a.id === editingAnimal.id ? updatedAnimal : a));
+
+    toast({
+        title: 'Success!',
+        description: `Animal with tag ${values.tagId} has been updated in the local list.`,
+    });
+    setIsEditDialogOpen(false);
+    setEditingAnimal(null);
+    form.reset();
   };
 
   const handleDelete = async (animal: Animal) => {
-    if (!user || !firestore) return;
-    const docRef = doc(firestore, 'users', user.uid, 'animal_tracking', animal.id);
-    try {
-      await deleteDoc(docRef);
-      toast({
-        title: 'Animal record deleted.',
-        description: `The record for tag ${animal.tagId} has been removed.`,
-      });
-    } catch(error) {
-       console.error('Error deleting animal:', error);
-       toast({
-        title: 'Error',
-        description: 'Could not delete animal. Please try again.',
-        variant: 'destructive'
-      });
-    }
+    setAnimals(prev => prev.filter(a => a.id !== animal.id));
+    toast({
+      title: 'Animal record deleted.',
+      description: `The record for tag ${animal.tagId} has been removed from the local list.`,
+    });
   }
 
   const filteredAnimals = animals?.filter(
@@ -476,7 +434,7 @@ export default function AnimalsPage() {
                           {animal.nextVaccinationDate && (
                             <Badge variant="outline" className="text-xs w-fit">
                               <CalendarCheck className="mr-1 h-3 w-3" />
-                              Vax: {format(animal.nextVaccinationDate.toDate(), 'PPP')}
+                              Vax: {format(animal.nextVaccinationDate, 'PPP')}
                             </Badge>
                           )}
                         </div>

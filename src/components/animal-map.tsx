@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { dummyAnimals } from '@/lib/dummy-data';
 
 type Animal = {
   id: string;
@@ -52,14 +51,8 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export default function AnimalMap() {
-    const { user } = useAuth();
-    const firestore = useFirestore();
-
-    const animalsQuery = useMemoFirebase(
-        () => (user && firestore ? collection(firestore, 'users', user.uid, 'animal_tracking') : null),
-        [user, firestore]
-    );
-    const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
+    const animals = dummyAnimals;
+    const isLoading = false; // Data is loaded locally
 
     const [locations, setLocations] = useState<AnimalLocation[]>([]);
     const [selectedAnimal, setSelectedAnimal] = useState<AnimalLocation | null>(null);
