@@ -351,6 +351,24 @@
         "isCompleted": {
           "type": "boolean",
           "description": "Indicates whether the reminder has been completed."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the reminder.",
+          "enum": [
+            "Crops",
+            "Animals",
+            "General"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "description": "The priority level of the reminder.",
+          "enum": [
+            "High",
+            "Medium",
+            "Low"
+          ]
         }
       },
       "required": [

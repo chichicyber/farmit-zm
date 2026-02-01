@@ -1,7 +1,5 @@
 'use client';
 
-import { diagnoseFarmIssue } from '@/ai/flows/diagnose-farm-issue';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,38 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { BrainCircuit, Sparkles } from 'lucide-react';
+import { BrainCircuit, Sprout, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Skeleton } from '@/components/ui/skeleton';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-
-const formSchema = z.object({
-  query: z
-    .string()
-    .min(10, 'Please describe your query in at least 10 characters.'),
-});
 
 export default function FarmitSmartPage() {
   const [welcomeText, setWelcomeText] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const welcomeMessage = 'Welcome to Farm Smart, any queries for today?';
+  const welcomeMessage = 'Welcome to Farm Smart, your intelligent farming partner.';
 
   useEffect(() => {
     let i = 0;
@@ -56,33 +28,6 @@ export default function FarmitSmartPage() {
     return () => clearInterval(typingInterval);
   }, []);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      query: '',
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setAiResponse('');
-    try {
-      const prompt = `You are Farm Smart, an intelligent agricultural assistant for farmers in Zambia. A user has the following query, provide a helpful and actionable response. Format the response in clear markdown. User Query: "${values.query}"`;
-      const result = await diagnoseFarmIssue(prompt, null);
-      setAiResponse(result);
-    } catch (error: any) {
-      console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Error Getting Response',
-        description:
-          error.message ||
-          'There was a problem getting a response. Please try again.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -93,76 +38,75 @@ export default function FarmitSmartPage() {
         <p className="h-5 text-muted-foreground">{welcomeText}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Ask a Question</CardTitle>
-            <CardDescription>
-              Inquire about crop schedules, animal health, or any general
-              farming question.
-            </CardDescription>
+          <CardHeader className="flex-row items-center gap-4 space-y-0">
+            <div className="rounded-full bg-primary/10 p-3">
+              <Sprout className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle>Agronomic Insights</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="query"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your Question</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="e.g., 'What is the best fertilizer schedule for maize?' or 'How do I treat Newcastle disease in chickens?'"
-                          {...field}
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Thinking...' : 'Get Smart Advice'}
-                </Button>
-              </form>
-            </Form>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border bg-card p-4">
+              <h4 className="font-semibold">Crop Rotation</h4>
+              <p className="text-sm text-muted-foreground">
+                Rotate your crops each season to improve soil health and reduce
+                pest and disease buildup. For example, follow maize with a
+                legume like soyabeans to naturally add nitrogen to the soil.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <h4 className="font-semibold">Planting Time</h4>
+              <p className="text-sm text-muted-foreground">
+                Early planting at the onset of rains can help your crops
+                establish a strong root system before the dry spells,
+                significantly boosting potential yield.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        {(isLoading || aiResponse) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-accent" />
-                Smart Response
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ) : (
-                aiResponse && (
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {aiResponse}
-                    </ReactMarkdown>
-                  </div>
-                )
-              )}
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader className="flex-row items-center gap-4 space-y-0">
+            <div className="rounded-full bg-destructive/10 p-3">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>Risk Alerts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+              <h4 className="font-semibold text-destructive">
+                Fall Armyworm Advisory
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Reports indicate high Fall Armyworm activity. Scout your maize
+                fields (especially young plants) for signs of damage like
+                "windowpane" feeding and apply recommended pesticides if
+                necessary.
+              </p>
+            </div>
+             <div className="rounded-lg border border-accent/50 bg-accent/5 p-4">
+              <h4 className="font-semibold text-accent-foreground/80">
+                Newcastle Disease
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Ensure your poultry's vaccination schedule for Newcastle Disease is up to date. Biosecurity is key: limit visitor access and disinfect footwear before entering the coop.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+       <Card>
+        <CardHeader>
+            <CardTitle>How Farmit Smart Works</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <CardDescription>
+                This system uses rule-based logic based on agronomic best practices. When you add a new crop or animal and provide key dates (like planting or vaccination dates), Farmit Smart automatically populates your "Reminders" page with a schedule of crucial tasks. This helps you stay on track with fertilizing, weeding, vaccinations, and more, ensuring you never miss a critical step in your farming operations.
+            </CardDescription>
+        </CardContent>
+       </Card>
     </div>
   );
 }
-
-    

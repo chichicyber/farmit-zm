@@ -17,6 +17,7 @@ type Reminder = {
   category: 'Crops' | 'Animals' | 'General';
   priority: 'High' | 'Medium' | 'Low';
   isCompleted: boolean;
+  createdAt: Timestamp;
 };
 
 export default function RemindersPage() {

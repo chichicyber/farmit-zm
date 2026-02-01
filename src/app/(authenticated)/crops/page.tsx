@@ -48,10 +48,12 @@ import { PlusCircle, Leaf, Grab, SprayCan } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, addDays, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { dummyCrops as initialCrops } from '@/lib/dummy-data';
 import { Badge } from '@/components/ui/badge';
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+
 
 const cropSchema = z.object({
   cropType: z.string().min(1, 'Crop type is required'),
@@ -60,23 +62,29 @@ const cropSchema = z.object({
   expectedHarvestDate: z.string().min(1, 'Expected harvest date is required'),
 });
 
-type Crop = z.infer<typeof cropSchema> & { 
-  id: string; 
+type Crop = {
+  id: string;
   userId: string;
-  plantingDate: string;
-  expectedHarvestDate: string;
-  fertilizerSchedule?: { nextApplicationAt: string };
-  weedingSchedule?: { nextWeedingAt: string };
-  sprayingSchedule?: { nextSprayingAt: string };
+  cropType: string;
+  plantingDate: Timestamp;
+  expectedHarvestDate: Timestamp;
+  growthStage: string;
+  createdAt: Timestamp;
 };
 
 const growthStages = ['Planting', 'Germination', 'Vegetative', 'Flowering', 'Harvesting'];
 
 export default function CropsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const firestore = useFirestore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [crops, setCrops] = useState<Crop[]>(initialCrops);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const cropsQuery = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, 'users', user.uid, 'crop_tracking') : null),
+    [user, firestore]
+  );
+  const { data: crops, isLoading } = useCollection<Crop>(cropsQuery);
 
   const form = useForm<z.infer<typeof cropSchema>>({
     resolver: zodResolver(cropSchema),
@@ -88,23 +96,75 @@ export default function CropsPage() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof cropSchema>) => {
-    const newCrop: Crop = {
+  const onSubmit = async (values: z.infer<typeof cropSchema>) => {
+    if (!user || !firestore) return;
+
+    try {
+      const plantingDate = parseISO(values.plantingDate);
+      const expectedHarvestDate = parseISO(values.expectedHarvestDate);
+
+      // 1. Save the new crop
+      await addDoc(collection(firestore, 'users', user.uid, 'crop_tracking'), {
         ...values,
-        id: Date.now().toString(),
-        userId: 'dummy-user-id',
-        plantingDate: new Date(values.plantingDate).toISOString(),
-        expectedHarvestDate: new Date(values.expectedHarvestDate).toISOString(),
-    };
+        userId: user.uid,
+        plantingDate: Timestamp.fromDate(plantingDate),
+        expectedHarvestDate: Timestamp.fromDate(expectedHarvestDate),
+        createdAt: serverTimestamp(),
+      });
 
-    setCrops(prev => [newCrop, ...prev].sort((a,b) => new Date(b.plantingDate).getTime() - new Date(a.plantingDate).getTime()));
+      // 2. Create rule-based reminders
+      const reminderCollection = collection(firestore, 'users', user.uid, 'reminders');
 
-    toast({
-      title: 'Success! (Demo)',
-      description: `${values.cropType} added to your local records.`,
-    });
-    form.reset();
-    setIsDialogOpen(false);
+      // Weeding reminder (14 days after planting)
+      const weedingDate = addDays(plantingDate, 14);
+      await addDoc(reminderCollection, {
+        userId: user.uid,
+        task: `Weed ${values.cropType}`,
+        dueDate: Timestamp.fromDate(weedingDate),
+        isCompleted: false,
+        category: 'Crops',
+        priority: 'Medium',
+        createdAt: serverTimestamp(),
+      });
+
+      // Fertilizer reminder (28 days after planting)
+      const fertilizerDate = addDays(plantingDate, 28);
+      await addDoc(reminderCollection, {
+        userId: user.uid,
+        task: `Apply top dressing fertilizer to ${values.cropType}`,
+        dueDate: Timestamp.fromDate(fertilizerDate),
+        isCompleted: false,
+        category: 'Crops',
+        priority: 'High',
+        createdAt: serverTimestamp(),
+      });
+
+      // Pest scouting reminder (42 days after planting)
+      const scoutingDate = addDays(plantingDate, 42);
+      await addDoc(reminderCollection, {
+        userId: user.uid,
+        task: `Scout for pests and diseases in ${values.cropType}`,
+        dueDate: Timestamp.fromDate(scoutingDate),
+        isCompleted: false,
+        category: 'Crops',
+        priority: 'Medium',
+        createdAt: serverTimestamp(),
+      });
+
+      toast({
+        title: 'Success!',
+        description: `${values.cropType} added and reminders have been scheduled.`,
+      });
+      form.reset();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding crop:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not add crop. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -199,7 +259,9 @@ export default function CropsPage() {
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Save Record</Button>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? 'Saving...' : 'Save Record'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -221,47 +283,45 @@ export default function CropsPage() {
                   <TableHead>Planting Date</TableHead>
                   <TableHead>Growth Stage</TableHead>
                   <TableHead>Expected Harvest</TableHead>
-                  <TableHead>Schedules</TableHead>
+                  <TableHead>Upcoming Tasks</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      <Skeleton className="h-8 w-full" />
-                    </TableCell>
-                  </TableRow>
-                ) : crops && crops.length > 0 ? (
-                  crops.map((crop) => (
-                    <TableRow key={crop.id}>
-                      <TableCell className="font-medium">{crop.cropType}</TableCell>
-                      <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
-                      <TableCell>{crop.growthStage}</TableCell>
-                      <TableCell>{format(new Date(crop.expectedHarvestDate), 'PPP')}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-2">
-                           {crop.fertilizerSchedule?.nextApplicationAt && (
-                            <Badge variant="outline" className="text-xs w-fit">
-                                <Leaf className="mr-1 h-3 w-3" />
-                                Fertilize: {format(new Date(crop.fertilizerSchedule.nextApplicationAt), 'PPP')}
-                            </Badge>
-                           )}
-                            {crop.weedingSchedule?.nextWeedingAt && (
-                            <Badge variant="outline" className="text-xs w-fit">
-                                <Grab className="mr-1 h-3 w-3" />
-                                Weed: {format(new Date(crop.weedingSchedule.nextWeedingAt), 'PPP')}
-                            </Badge>
-                           )}
-                           {crop.sprayingSchedule?.nextSprayingAt && (
-                            <Badge variant="outline" className="text-xs w-fit">
-                                <SprayCan className="mr-1 h-3 w-3" />
-                                Spray: {format(new Date(crop.sprayingSchedule.nextSprayingAt), 'PPP')}
-                            </Badge>
-                           )}
-                        </div>
+                  Array.from({length: 3}).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5} className="h-12 text-center">
+                        <Skeleton className="h-8 w-full" />
                       </TableCell>
                     </TableRow>
                   ))
+                ) : crops && crops.length > 0 ? (
+                  crops.map((crop) => {
+                    const plantingDate = crop.plantingDate.toDate();
+                    return (
+                    <TableRow key={crop.id}>
+                      <TableCell className="font-medium">{crop.cropType}</TableCell>
+                      <TableCell>{format(plantingDate, 'PPP')}</TableCell>
+                      <TableCell>{crop.growthStage}</TableCell>
+                      <TableCell>{format(crop.expectedHarvestDate.toDate(), 'PPP')}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-2">
+                            <Badge variant="outline" className="text-xs w-fit">
+                                <Grab className="mr-1 h-3 w-3" />
+                                Weed by: {format(addDays(plantingDate, 14), 'PPP')}
+                            </Badge>
+                           <Badge variant="outline" className="text-xs w-fit">
+                                <Leaf className="mr-1 h-3 w-3" />
+                                Fertilize by: {format(addDays(plantingDate, 28), 'PPP')}
+                            </Badge>
+                           <Badge variant="outline" className="text-xs w-fit">
+                                <SprayCan className="mr-1 h-3 w-3" />
+                                Scout by: {format(addDays(plantingDate, 42), 'PPP')}
+                            </Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )})
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">

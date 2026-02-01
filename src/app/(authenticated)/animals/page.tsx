@@ -56,7 +56,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Map, PlusCircle, Pencil, Trash2, Clock, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -64,7 +64,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { dummyAnimals as initialAnimals } from '@/lib/dummy-data';
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
@@ -76,16 +77,15 @@ const animalSchema = z.object({
 
 type AnimalFormData = z.infer<typeof animalSchema>;
 
-type Animal = AnimalFormData & {
+type Animal = {
   id: string;
-  vaccinationSchedule?: {
-    vaccineName: string;
-    nextVaccinationAt: string;
-  };
-  feedingSchedule?: {
-    time: string;
-    frequency: string;
-  } | string;
+  userId: string;
+  tagId: string;
+  animalType: string;
+  healthStatus: string;
+  nextVaccinationDate: Timestamp;
+  feedingSchedule?: string;
+  createdAt: Timestamp;
 };
 
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
@@ -93,13 +93,19 @@ const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
 const filterAnimalTypes = ['All', ...animalTypes];
 
 export default function AnimalsPage() {
-  const [animals, setAnimals] = useState<Animal[]>(initialAnimals as Animal[]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const firestore = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
+
+  const animalsQuery = useMemoFirebase(
+    () => (user && firestore ? collection(firestore, 'users', user.uid, 'animal_tracking') : null),
+    [user, firestore]
+  );
+  const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
 
   const form = useForm<AnimalFormData>({
     resolver: zodResolver(animalSchema),
@@ -112,69 +118,105 @@ export default function AnimalsPage() {
     },
   });
 
-  const onAddSubmit = (values: AnimalFormData) => {
+  const onAddSubmit = async (values: AnimalFormData) => {
+    if (!user || !firestore) return;
+
     setIsAddDialogOpen(false);
     form.reset();
 
-    const newAnimal: Animal = {
-      ...values,
-      id: Date.now().toString(),
-      nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
-    };
-    setAnimals(prev => [...prev, newAnimal].sort((a,b) => a.tagId.localeCompare(b.tagId)));
+    try {
+      const vaccinationDate = parseISO(values.nextVaccinationDate);
+      await addDoc(collection(firestore, 'users', user.uid, 'animal_tracking'), {
+        ...values,
+        userId: user.uid,
+        nextVaccinationDate: Timestamp.fromDate(vaccinationDate),
+        createdAt: serverTimestamp(),
+      });
 
-    toast({
-        title: 'Success! (Demo)',
-        description: `Animal with tag ${values.tagId} has been added.`,
-    });
+      const reminderData = {
+          userId: user.uid,
+          task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
+          dueDate: Timestamp.fromDate(vaccinationDate),
+          isCompleted: false,
+          category: 'Animals',
+          priority: 'High',
+          createdAt: serverTimestamp(),
+      };
+      await addDoc(collection(firestore, 'users', user.uid, 'reminders'), reminderData);
+
+      toast({
+          title: 'Success!',
+          description: `Animal with tag ${values.tagId} has been added and a reminder has been set.`,
+      });
+    } catch (error) {
+        console.error('Error adding animal:', error);
+        toast({
+            title: 'Error',
+            description: 'Could not add animal. Please try again.',
+            variant: 'destructive',
+        });
+    }
   };
   
   const handleEditOpen = (animal: Animal) => {
     setEditingAnimal(animal);
-    const vaccinationDate = animal.vaccinationSchedule?.nextVaccinationAt ?? animal.nextVaccinationDate;
-    const formattedDate = vaccinationDate
-      ? format(new Date(vaccinationDate), 'yyyy-MM-dd')
-      : '';
-    
-    let feedingScheduleString = '';
-    if (typeof animal.feedingSchedule === 'string') {
-        feedingScheduleString = animal.feedingSchedule;
-    } else if (animal.feedingSchedule?.time) {
-        feedingScheduleString = `${animal.feedingSchedule.time} (${animal.feedingSchedule.frequency})`;
-    }
+    const formattedDate = animal.nextVaccinationDate ? format(animal.nextVaccinationDate.toDate(), 'yyyy-MM-dd') : '';
       
-    form.reset({ ...animal, nextVaccinationDate: formattedDate, feedingSchedule: feedingScheduleString });
+    form.reset({ 
+      tagId: animal.tagId,
+      animalType: animal.animalType,
+      healthStatus: animal.healthStatus,
+      nextVaccinationDate: formattedDate,
+      feedingSchedule: animal.feedingSchedule || ''
+    });
     setIsEditDialogOpen(true);
   };
 
-  const onEditSubmit = (values: AnimalFormData) => {
-    if (!editingAnimal) return;
+  const onEditSubmit = async (values: AnimalFormData) => {
+    if (!editingAnimal || !user || !firestore) return;
+
+    const docRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
+    
+    try {
+      await updateDoc(docRef, {
+        ...values,
+        nextVaccinationDate: Timestamp.fromDate(parseISO(values.nextVaccinationDate)),
+      });
+      toast({
+          title: 'Success!',
+          description: `Animal with tag ${values.tagId} has been updated.`,
+      });
+    } catch (error) {
+       console.error('Error updating animal:', error);
+        toast({
+            title: 'Error',
+            description: 'Could not update animal. Please try again.',
+            variant: 'destructive',
+        });
+    }
 
     setIsEditDialogOpen(false);
     setEditingAnimal(null);
     form.reset();
-    
-    const updatedAnimal = {
-      ...editingAnimal,
-      ...values,
-      nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
-    };
-
-    setAnimals(prev => prev.map(a => a.id === editingAnimal.id ? updatedAnimal : a));
-
-    toast({
-        title: 'Success! (Demo)',
-        description: `Animal with tag ${values.tagId} has been updated.`,
-    });
   };
 
-  const handleDelete = (animal: Animal) => {
-    setAnimals(prev => prev.filter(a => a.id !== animal.id));
-    toast({
-      title: 'Animal record deleted (Demo).',
-      description: `The record for tag ${animal.tagId} has been removed.`,
-      variant: "destructive"
-    });
+  const handleDelete = async (animal: Animal) => {
+    if (!user || !firestore) return;
+    const docRef = doc(firestore, 'users', user.uid, 'animal_tracking', animal.id);
+    try {
+      await deleteDoc(docRef);
+      toast({
+        title: 'Animal record deleted.',
+        description: `The record for tag ${animal.tagId} has been removed.`,
+      });
+    } catch(error) {
+       console.error('Error deleting animal:', error);
+       toast({
+        title: 'Error',
+        description: 'Could not delete animal. Please try again.',
+        variant: 'destructive'
+      });
+    }
   }
 
   const filteredAnimals = animals?.filter(
@@ -303,8 +345,8 @@ export default function AnimalsPage() {
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">
-                      Save Record
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? 'Saving...' : 'Save Record'}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -346,13 +388,11 @@ export default function AnimalsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={5}><Skeleton className="w-full h-8" /></TableCell></TableRow>
+                  Array.from({length: 3}).map((_, i) => (
+                    <TableRow key={i}><TableCell colSpan={5}><Skeleton className="w-full h-8" /></TableCell></TableRow>
+                  ))
                 ) : filteredAnimals && filteredAnimals.length > 0 ? (
-                  filteredAnimals.map((animal) => {
-                    const vaccinationDate = animal.vaccinationSchedule?.nextVaccinationAt ?? animal.nextVaccinationDate;
-                    const feedingInfo = typeof animal.feedingSchedule === 'object' ? animal.feedingSchedule.time : animal.feedingSchedule;
-
-                    return (
+                  filteredAnimals.map((animal) => (
                     <TableRow key={animal.id}>
                       <TableCell className="font-medium">{animal.tagId}</TableCell>
                       <TableCell>{animal.animalType}</TableCell>
@@ -372,16 +412,16 @@ export default function AnimalsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-2">
-                          {feedingInfo && (
+                          {animal.feedingSchedule && (
                             <Badge variant="outline" className="text-xs w-fit">
                               <Clock className="mr-1 h-3 w-3" />
-                              Feed: {feedingInfo}
+                              Feed: {animal.feedingSchedule}
                             </Badge>
                           )}
-                          {vaccinationDate && (
+                          {animal.nextVaccinationDate && (
                             <Badge variant="outline" className="text-xs w-fit">
                               <CalendarCheck className="mr-1 h-3 w-3" />
-                              Vax: {format(new Date(vaccinationDate), 'PPP')}
+                              Vax: {format(animal.nextVaccinationDate.toDate(), 'PPP')}
                             </Badge>
                           )}
                         </div>
@@ -413,7 +453,7 @@ export default function AnimalsPage() {
                         </AlertDialog>
                       </TableCell>
                     </TableRow>
-                  )})
+                  ))
                 ) : (
                   <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">
@@ -528,8 +568,8 @@ export default function AnimalsPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit">
-                  Save Changes
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
               </DialogFooter>
             </form>
