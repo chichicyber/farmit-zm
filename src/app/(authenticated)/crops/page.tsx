@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -43,13 +44,14 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Leaf, Grab, SprayCan } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dummyCrops as initialCrops } from '@/lib/dummy-data';
+import { Badge } from '@/components/ui/badge';
 
 const cropSchema = z.object({
   cropType: z.string().min(1, 'Crop type is required'),
@@ -63,6 +65,9 @@ type Crop = z.infer<typeof cropSchema> & {
   userId: string;
   plantingDate: string;
   expectedHarvestDate: string;
+  fertilizerSchedule?: { nextApplicationAt: string };
+  weedingSchedule?: { nextWeedingAt: string };
+  sprayingSchedule?: { nextSprayingAt: string };
 };
 
 const growthStages = ['Planting', 'Germination', 'Vegetative', 'Flowering', 'Harvesting'];
@@ -84,7 +89,7 @@ export default function CropsPage() {
   });
 
   const onSubmit = (values: z.infer<typeof cropSchema>) => {
-    const newCrop = {
+    const newCrop: Crop = {
         ...values,
         id: Date.now().toString(),
         userId: 'dummy-user-id',
@@ -216,12 +221,13 @@ export default function CropsPage() {
                   <TableHead>Planting Date</TableHead>
                   <TableHead>Growth Stage</TableHead>
                   <TableHead>Expected Harvest</TableHead>
+                  <TableHead>Schedules</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       <Skeleton className="h-8 w-full" />
                     </TableCell>
                   </TableRow>
@@ -232,11 +238,33 @@ export default function CropsPage() {
                       <TableCell>{format(new Date(crop.plantingDate), 'PPP')}</TableCell>
                       <TableCell>{crop.growthStage}</TableCell>
                       <TableCell>{format(new Date(crop.expectedHarvestDate), 'PPP')}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-2">
+                           {crop.fertilizerSchedule?.nextApplicationAt && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                                <Leaf className="mr-1 h-3 w-3" />
+                                Fertilize: {format(new Date(crop.fertilizerSchedule.nextApplicationAt), 'PPP')}
+                            </Badge>
+                           )}
+                            {crop.weedingSchedule?.nextWeedingAt && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                                <Grab className="mr-1 h-3 w-3" />
+                                Weed: {format(new Date(crop.weedingSchedule.nextWeedingAt), 'PPP')}
+                            </Badge>
+                           )}
+                           {crop.sprayingSchedule?.nextSprayingAt && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                                <SprayCan className="mr-1 h-3 w-3" />
+                                Spray: {format(new Date(crop.sprayingSchedule.nextSprayingAt), 'PPP')}
+                            </Badge>
+                           )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       No crops found. Add your first crop record to get started.
                     </TableCell>
                   </TableRow>

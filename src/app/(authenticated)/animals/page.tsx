@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +57,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { Map, PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { Map, PlusCircle, Pencil, Trash2, Clock, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -73,14 +74,26 @@ const animalSchema = z.object({
   feedingSchedule: z.string().optional(),
 });
 
-type Animal = z.infer<typeof animalSchema> & { id: string };
+type AnimalFormData = z.infer<typeof animalSchema>;
+
+type Animal = AnimalFormData & {
+  id: string;
+  vaccinationSchedule?: {
+    vaccineName: string;
+    nextVaccinationAt: string;
+  };
+  feedingSchedule?: {
+    time: string;
+    frequency: string;
+  } | string;
+};
 
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
 const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
 const filterAnimalTypes = ['All', ...animalTypes];
 
 export default function AnimalsPage() {
-  const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
+  const [animals, setAnimals] = useState<Animal[]>(initialAnimals as Animal[]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -88,7 +101,7 @@ export default function AnimalsPage() {
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof animalSchema>>({
+  const form = useForm<AnimalFormData>({
     resolver: zodResolver(animalSchema),
     defaultValues: {
       tagId: '',
@@ -99,7 +112,7 @@ export default function AnimalsPage() {
     },
   });
 
-  const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
+  const onAddSubmit = (values: AnimalFormData) => {
     setIsAddDialogOpen(false);
     form.reset();
 
@@ -118,14 +131,23 @@ export default function AnimalsPage() {
   
   const handleEditOpen = (animal: Animal) => {
     setEditingAnimal(animal);
-    const formattedDate = animal.nextVaccinationDate
-      ? format(new Date(animal.nextVaccinationDate), 'yyyy-MM-dd')
+    const vaccinationDate = animal.vaccinationSchedule?.nextVaccinationAt ?? animal.nextVaccinationDate;
+    const formattedDate = vaccinationDate
+      ? format(new Date(vaccinationDate), 'yyyy-MM-dd')
       : '';
-    form.reset({ ...animal, nextVaccinationDate: formattedDate });
+    
+    let feedingScheduleString = '';
+    if (typeof animal.feedingSchedule === 'string') {
+        feedingScheduleString = animal.feedingSchedule;
+    } else if (animal.feedingSchedule?.time) {
+        feedingScheduleString = `${animal.feedingSchedule.time} (${animal.feedingSchedule.frequency})`;
+    }
+      
+    form.reset({ ...animal, nextVaccinationDate: formattedDate, feedingSchedule: feedingScheduleString });
     setIsEditDialogOpen(true);
   };
 
-  const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
+  const onEditSubmit = (values: AnimalFormData) => {
     if (!editingAnimal) return;
 
     setIsEditDialogOpen(false);
@@ -318,7 +340,7 @@ export default function AnimalsPage() {
                   <TableHead>Tag ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Health Status</TableHead>
-                  <TableHead>Next Vaccination</TableHead>
+                  <TableHead>Schedules</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -326,7 +348,11 @@ export default function AnimalsPage() {
                 {isLoading ? (
                   <TableRow><TableCell colSpan={5}><Skeleton className="w-full h-8" /></TableCell></TableRow>
                 ) : filteredAnimals && filteredAnimals.length > 0 ? (
-                  filteredAnimals.map((animal) => (
+                  filteredAnimals.map((animal) => {
+                    const vaccinationDate = animal.vaccinationSchedule?.nextVaccinationAt ?? animal.nextVaccinationDate;
+                    const feedingInfo = typeof animal.feedingSchedule === 'object' ? animal.feedingSchedule.time : animal.feedingSchedule;
+
+                    return (
                     <TableRow key={animal.id}>
                       <TableCell className="font-medium">{animal.tagId}</TableCell>
                       <TableCell>{animal.animalType}</TableCell>
@@ -345,7 +371,20 @@ export default function AnimalsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(animal.nextVaccinationDate), 'PPP')}
+                        <div className="flex flex-col gap-2">
+                          {feedingInfo && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                              <Clock className="mr-1 h-3 w-3" />
+                              Feed: {feedingInfo}
+                            </Badge>
+                          )}
+                          {vaccinationDate && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                              <CalendarCheck className="mr-1 h-3 w-3" />
+                              Vax: {format(new Date(vaccinationDate), 'PPP')}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
@@ -374,7 +413,7 @@ export default function AnimalsPage() {
                         </AlertDialog>
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 ) : (
                   <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">
