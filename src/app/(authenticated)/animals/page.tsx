@@ -61,10 +61,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { dummyAnimals as initialAnimals } from '@/lib/dummy-data';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
@@ -79,23 +78,15 @@ type Animal = z.infer<typeof animalSchema> & { id: string };
 const healthStatuses = ['Healthy', 'Under Observation', 'Sick'];
 const animalTypes = ['Cattle', 'Goat', 'Chicken', 'Pig', 'Sheep'];
 const filterAnimalTypes = ['All', ...animalTypes];
-const LUSAKA_CENTER = { lat: -15.416667, lng: 28.283333 };
 
 export default function AnimalsPage() {
-  const { user } = useAuth();
-  const firestore = useFirestore();
+  const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [filterType, setFilterType] = useState('All');
   const { toast } = useToast();
-
-  const animalsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'animal_tracking'), orderBy('tagId'));
-  }, [user, firestore]);
-
-  const { data: animals, isLoading } = useCollection<Animal>(animalsQuery);
 
   const form = useForm<z.infer<typeof animalSchema>>({
     resolver: zodResolver(animalSchema),
@@ -109,99 +100,59 @@ export default function AnimalsPage() {
   });
 
   const onAddSubmit = (values: z.infer<typeof animalSchema>) => {
-    if (!user || !firestore) return;
-
-    const animalCollectionRef = collection(firestore, 'users', user.uid, 'animal_tracking');
-    const remindersCollectionRef = collection(firestore, 'users', user.uid, 'reminders');
-
-    // Close dialog immediately and reset form
     setIsAddDialogOpen(false);
     form.reset();
 
-    addDoc(animalCollectionRef, {
-        ...values,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        locationLatitude: LUSAKA_CENTER.lat,
-        locationLongitude: LUSAKA_CENTER.lng,
-    })
-    .then(newAnimalRef => {
-        // Once the animal is added, create the reminder.
-        addDoc(remindersCollectionRef, {
-            userId: user.uid,
-            task: `Vaccinate ${values.animalType} (Tag: ${values.tagId})`,
-            dueDate: new Date(values.nextVaccinationDate),
-            isCompleted: false,
-            category: 'Animals',
-            priority: 'High',
-            relatedDocId: newAnimalRef.id,
-        }).catch(error => {
-            console.error("Error adding reminder:", error);
-            toast({ title: 'Reminder Failed', description: 'Animal was added, but could not set vaccination reminder.', variant: 'destructive' });
-        });
+    const newAnimal: Animal = {
+      ...values,
+      id: Date.now().toString(),
+      nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
+    };
+    setAnimals(prev => [...prev, newAnimal].sort((a,b) => a.tagId.localeCompare(b.tagId)));
 
-        toast({
-            title: 'Success!',
-            description: `Animal with tag ${values.tagId} has been added and a vaccination reminder has been set.`,
-        });
-    })
-    .catch(error => {
-        console.error("Error adding animal: ", error);
-        toast({ title: 'Error', description: 'Could not add animal.', variant: 'destructive' });
+    toast({
+        title: 'Success! (Demo)',
+        description: `Animal with tag ${values.tagId} has been added.`,
     });
   };
   
-  const handleEditOpen = (animal: any) => {
+  const handleEditOpen = (animal: Animal) => {
     setEditingAnimal(animal);
-    const formattedDate = animal.nextVaccinationDate instanceof Date 
-      ? format(animal.nextVaccinationDate, 'yyyy-MM-dd')
-      : animal.nextVaccinationDate.split('T')[0];
-
+    const formattedDate = animal.nextVaccinationDate
+      ? format(new Date(animal.nextVaccinationDate), 'yyyy-MM-dd')
+      : '';
     form.reset({ ...animal, nextVaccinationDate: formattedDate });
     setIsEditDialogOpen(true);
   };
 
   const onEditSubmit = (values: z.infer<typeof animalSchema>) => {
-    if (!editingAnimal || !user || !firestore) return;
+    if (!editingAnimal) return;
 
-    const animalRef = doc(firestore, 'users', user.uid, 'animal_tracking', editingAnimal.id);
-    
-    // Close dialog and reset state immediately
     setIsEditDialogOpen(false);
     setEditingAnimal(null);
     form.reset();
-
-    updateDoc(animalRef, {
+    
+    const updatedAnimal = {
+      ...editingAnimal,
       ...values,
       nextVaccinationDate: new Date(values.nextVaccinationDate).toISOString(),
-    })
-    .then(() => {
-        toast({
-            title: 'Success!',
-            description: `Animal with tag ${values.tagId} has been updated.`,
-        });
-    })
-    .catch((error) => {
-        console.error("Error updating animal: ", error);
-        toast({ title: 'Error', description: 'Could not update animal.', variant: 'destructive' });
+    };
+
+    setAnimals(prev => prev.map(a => a.id === editingAnimal.id ? updatedAnimal : a));
+
+    toast({
+        title: 'Success! (Demo)',
+        description: `Animal with tag ${values.tagId} has been updated.`,
     });
   };
 
   const handleDelete = (animal: Animal) => {
-    if (!user || !firestore) return;
-
-    deleteDoc(doc(firestore, 'users', user.uid, 'animal_tracking', animal.id))
-      .then(() => {
-        toast({
-          title: 'Animal record deleted.',
-          description: `The record for tag ${animal.tagId} has been removed.`,
-          variant: "destructive"
-        });
-      })
-      .catch((error) => {
-        console.error("Error deleting animal: ", error);
-        toast({ title: 'Error', description: 'Could not delete animal.', variant: 'destructive' });
-      });
+    setAnimals(prev => prev.filter(a => a.id !== animal.id));
+    toast({
+      title: 'Animal record deleted (Demo).',
+      description: `The record for tag ${animal.tagId} has been removed.`,
+      variant: "destructive"
+    });
   }
 
   const filteredAnimals = animals?.filter(

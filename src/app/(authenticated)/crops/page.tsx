@@ -47,10 +47,9 @@ import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { format, addDays } from 'date-fns';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { dummyCrops as initialCrops } from '@/lib/dummy-data';
 
 const cropSchema = z.object({
   cropType: z.string().min(1, 'Crop type is required'),
@@ -69,17 +68,10 @@ type Crop = z.infer<typeof cropSchema> & {
 const growthStages = ['Planting', 'Germination', 'Vegetative', 'Flowering', 'Harvesting'];
 
 export default function CropsPage() {
-  const { user } = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const cropsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'crop_tracking'), orderBy('plantingDate', 'desc'));
-  }, [user, firestore]);
-
-  const { data: crops, isLoading } = useCollection<Crop>(cropsQuery);
+  const [crops, setCrops] = useState<Crop[]>(initialCrops);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof cropSchema>>({
     resolver: zodResolver(cropSchema),
@@ -91,48 +83,23 @@ export default function CropsPage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof cropSchema>) => {
-    if (!user || !firestore) {
-      toast({ title: 'Error', description: 'You must be logged in to add a crop.', variant: 'destructive' });
-      return;
-    }
-    try {
-      const newCrop = await addDoc(collection(firestore, 'users', user.uid, 'crop_tracking'), {
+  const onSubmit = (values: z.infer<typeof cropSchema>) => {
+    const newCrop = {
         ...values,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-      });
-      
-      const plantingDate = new Date(values.plantingDate);
+        id: Date.now().toString(),
+        userId: 'dummy-user-id',
+        plantingDate: new Date(values.plantingDate).toISOString(),
+        expectedHarvestDate: new Date(values.expectedHarvestDate).toISOString(),
+    };
 
-      const reminders = [
-        { task: `Weed ${values.cropType}`, dueDate: addDays(plantingDate, 14), priority: 'Medium' },
-        { task: `Apply top-dressing fertilizer to ${values.cropType}`, dueDate: addDays(plantingDate, 28), priority: 'High' },
-        { task: `Scout ${values.cropType} for pests`, dueDate: addDays(plantingDate, 42), priority: 'Medium' },
-      ];
+    setCrops(prev => [newCrop, ...prev].sort((a,b) => new Date(b.plantingDate).getTime() - new Date(a.plantingDate).getTime()));
 
-      for (const reminder of reminders) {
-        await addDoc(collection(firestore, 'users', user.uid, 'reminders'), {
-          userId: user.uid,
-          task: reminder.task,
-          dueDate: reminder.dueDate,
-          isCompleted: false,
-          category: 'Crops',
-          priority: reminder.priority,
-          relatedDocId: newCrop.id,
-        });
-      }
-
-      toast({
-        title: 'Success!',
-        description: `${values.cropType} added and smart reminders have been scheduled.`,
-      });
-      form.reset();
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Error adding crop:", error);
-      toast({ title: 'Error Adding Crop', description: 'There was a problem saving your crop data.', variant: 'destructive' });
-    }
+    toast({
+      title: 'Success! (Demo)',
+      description: `${values.cropType} added to your local records.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
   };
 
   return (
