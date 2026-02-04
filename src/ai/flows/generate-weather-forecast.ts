@@ -42,7 +42,7 @@ const weatherFlow = ai.defineFlow(
       },
     });
 
-    return llmResponse.output() as WeatherForecast[];
+    return llmResponse.output as WeatherForecast[];
   }
 );
 
