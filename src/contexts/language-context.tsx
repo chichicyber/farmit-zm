@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 // Define language data structure
 interface Translations {
@@ -12,7 +12,6 @@ interface LanguageContextType {
   language: string;
   setLanguage: (lang: string) => void;
   t: (key: string, options?: { [key: string]: string | number } | undefined) => string;
-  translations: Translations;
 }
 
 // Available languages
@@ -24,28 +23,30 @@ export const languages = {
 };
 export type LanguageCode = keyof typeof languages;
 
-// Create context with a default value
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Helper to get nested translation
 const getTranslation = (translations: Translations, key: string): string | undefined => {
-  return key.split('.').reduce((obj, k) => {
-    if (obj && typeof obj === 'object' && k in obj) {
-      return obj[k as keyof typeof obj] as string | Translations;
-    }
-    return undefined;
-  }, translations) as string | undefined;
+    return key.split('.').reduce((obj, k) => {
+        if (obj && typeof obj === 'object' && k in obj) {
+        return obj[k as keyof typeof obj] as string | Translations;
+        }
+        return undefined;
+    }, translations) as string | undefined;
 };
 
-// Provider component
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
   const [translations, setTranslations] = useState<Translations>({});
   const [defaultTranslations, setDefaultTranslations] = useState<Translations>({});
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load english translations initially
+  // This effect runs once to get the stored language and load the default (English) translations.
   useEffect(() => {
+    const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
+    if (storedLang && languages[storedLang]) {
+      setLanguageState(storedLang);
+    }
+    
     const loadDefault = async () => {
       try {
         const enModule = await import('@/locales/en.json');
@@ -57,65 +58,64 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     loadDefault();
   }, []);
   
-  // Load translations for the current language
+  // This effect runs whenever the language or the default translations change.
+  // It loads the translations for the currently selected language.
   useEffect(() => {
-    if (!defaultTranslations) return;
+    if (!Object.keys(defaultTranslations).length) return;
+
+    setIsLoading(true);
     const loadTranslations = async () => {
       try {
         const module = await import(`@/locales/${language}.json`);
         setTranslations(module.default);
       } catch (error) {
         console.error(`Could not load translations for ${language}, falling back to English.`, error);
-        setTranslations(defaultTranslations); // Fallback to english
+        setTranslations(defaultTranslations);
       } finally {
-        setIsLoaded(true);
+        setIsLoading(false);
       }
     };
     loadTranslations();
   }, [language, defaultTranslations]);
 
-  // Set initial language from localStorage
-  useEffect(() => {
-    const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
-    if (storedLang && languages[storedLang]) {
-      setLanguageState(storedLang);
-    }
-  }, []);
-
   const setLanguage = (lang: string) => {
     if (languages[lang as LanguageCode]) {
-      localStorage.setItem('farmit-lang', lang);
-      setLanguageState(lang as LanguageCode);
+      const newLang = lang as LanguageCode;
+      localStorage.setItem('farmit-lang', newLang);
+      setLanguageState(newLang);
     }
   };
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
+    if (isLoading && !Object.keys(translations).length) return ''; 
+
     let translatedText = getTranslation(translations, key);
     
-    // Fallback to English if translation is missing
     if (translatedText === undefined) {
       translatedText = getTranslation(defaultTranslations, key);
     }
 
-    // If still not found, return the key itself
     if (translatedText === undefined) {
-      return key;
+        console.warn(`Translation key not found: ${key}`);
+        return key;
     }
 
-    // Handle placeholder replacements
-    if (options) {
+    if (options && typeof translatedText === 'string') {
       return Object.entries(options).reduce((acc, [optKey, optValue]) => {
         return acc.replace(`{${optKey}}`, String(optValue));
       }, translatedText);
     }
 
-    return translatedText;
-  }, [translations, defaultTranslations]);
+    return translatedText as string;
+  }, [translations, defaultTranslations, isLoading]);
 
-
-  const value = { language, setLanguage, t, translations };
+  const value = useMemo(() => ({
+    language,
+    setLanguage,
+    t,
+  }), [language, t]);
   
-  if (!isLoaded) {
+  if (isLoading && !Object.keys(defaultTranslations).length) {
       return (
          <div className="flex h-screen w-full items-center justify-center bg-background">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
@@ -130,7 +130,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook to use the language context
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {

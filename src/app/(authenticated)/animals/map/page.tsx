@@ -8,13 +8,14 @@ import { useLanguage } from '@/contexts/language-context';
 const AnimalMap = dynamic(() => import('@/components/animal-map'), {
   ssr: false,
   loading: () => {
-    const { t } = useLanguage();
+    // This is a dynamic import, so we can't use the hook here directly.
+    // We'll pass the loading texts as props or rely on simple English strings.
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight">{t('animalMap.title')}</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tight">Animal Map View</h1>
           <p className="text-muted-foreground">
-            {t('animalMap.loading')}
+            Loading map and animal locations...
           </p>
         </div>
 
@@ -22,8 +23,8 @@ const AnimalMap = dynamic(() => import('@/components/animal-map'), {
           <div className="md:col-span-1 flex flex-col gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('animalMap.controls.title')}</CardTitle>
-                <CardDescription>{t('animalMap.controls.description')}</CardDescription>
+                <CardTitle>Map Controls</CardTitle>
+                <CardDescription>Select a field to view.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Skeleton className="h-10 w-full" />
@@ -34,7 +35,7 @@ const AnimalMap = dynamic(() => import('@/components/animal-map'), {
           <div className="md:col-span-2">
             <Card className="h-[70vh]">
               <CardContent className="p-0 h-full rounded-lg overflow-hidden flex items-center justify-center bg-muted">
-                <p className="text-muted-foreground">{t('animalMap.loadingMap')}</p>
+                <p className="text-muted-foreground">Loading Map...</p>
               </CardContent>
             </Card>
           </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { generateRecommendation } from '@/ai/flows/generate-growth-recommendations';
