@@ -22,13 +22,13 @@ export function LanguageSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {Object.entries(languages).map(([code, name]) => (
+        {Object.keys(languages).map((code) => (
           <DropdownMenuItem
             key={code}
             onSelect={() => setLanguage(code)}
             className={language === code ? 'font-semibold' : ''}
           >
-            {name}
+            {t(`languages.${code}`)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

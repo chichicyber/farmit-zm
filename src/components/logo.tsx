@@ -1,9 +1,13 @@
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/language-context';
 
 export function Logo({ className }: { className?: string }) {
+  const { t } = useLanguage();
   return (
     <Link
       href="/dashboard"
@@ -23,7 +27,7 @@ export function Logo({ className }: { className?: string }) {
       </div>
       <div className="group-data-[collapsible=icon]:hidden">
         <h1 className="font-headline text-xl font-bold tracking-tight text-foreground">
-          Farmit-ZM
+          {t('app.name')}
         </h1>
       </div>
     </Link>

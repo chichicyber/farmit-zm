@@ -1,10 +1,14 @@
 
 {
-  "dashboard": {
-    "title": "Dashboard (TONGA TEST)",
-    "description": "Mwabuka! Aaya ngamakani aamulimo wanu."
-  },
-  "nav": {
-    "dashboard": "Dashboard (TOI)"
+  "app.name": "Farmit-ZM 🔥TONGA🔥",
+  "nav.dashboard": "Dashboard 🔥TONGA🔥",
+  "dashboard.title": "Dashboard ya Farm 🔥TONGA🔥",
+  "login.title": "Mwalile 🔥TONGA🔥",
+  "signup.title": "Lembani Akaundi 🔥TONGA🔥",
+  "languages": {
+    "en": "English",
+    "bem": "IciBemba",
+    "toi": "CiTonga",
+    "loz": "SiLozi"
   }
 }

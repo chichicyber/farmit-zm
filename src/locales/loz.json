@@ -1,10 +1,14 @@
 
 {
-  "dashboard": {
-    "title": "Dashboard (LOZI TEST)",
-    "description": "Ki kale! Se si bonisa mwa musebezi wa mina u zamaisa."
-  },
-  "nav": {
-    "dashboard": "Dashboard (LOZ)"
+  "app.name": "Farmit-ZM 🔥LOZI🔥",
+  "nav.dashboard": "Dashboard 🔥LOZI🔥",
+  "dashboard.title": "Dashboard ya Farm 🔥LOZI🔥",
+  "login.title": "Mulumile 🔥LOZI🔥",
+  "signup.title": "Muñolise Akaundi 🔥LOZI🔥",
+  "languages": {
+    "en": "English",
+    "bem": "IciBemba",
+    "toi": "CiTonga",
+    "loz": "SiLozi"
   }
 }
