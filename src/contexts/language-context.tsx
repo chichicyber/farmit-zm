@@ -38,9 +38,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
   const [translations, setTranslations] = useState<Translations>({});
   const [defaultTranslations, setDefaultTranslations] = useState<Translations>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitiallyLoading, setIsInitiallyLoading] = useState(true);
 
-  // This effect runs once to get the stored language and load the default (English) translations.
+  // This effect runs once on mount to determine the initial language and load the default (English) translations.
   useEffect(() => {
     const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
     if (storedLang && languages[storedLang]) {
@@ -58,36 +58,45 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     loadDefault();
   }, []);
   
-  // This effect runs whenever the language or the default translations change.
-  // It loads the translations for the currently selected language.
+  // This effect loads translations for the current language whenever it changes or when default translations become available.
   useEffect(() => {
     if (!Object.keys(defaultTranslations).length) return;
 
-    setIsLoading(true);
+    let isMounted = true;
     const loadTranslations = async () => {
       try {
         const module = await import(`@/locales/${language}.json`);
-        setTranslations(module.default);
+        if(isMounted) {
+            setTranslations(module.default);
+        }
       } catch (error) {
         console.error(`Could not load translations for ${language}, falling back to English.`, error);
-        setTranslations(defaultTranslations);
+        if(isMounted){
+            setTranslations(defaultTranslations);
+        }
       } finally {
-        setIsLoading(false);
+        if(isMounted){
+            setIsInitiallyLoading(false);
+        }
       }
     };
     loadTranslations();
+
+    return () => {
+        isMounted = false;
+    }
   }, [language, defaultTranslations]);
 
-  const setLanguage = (lang: string) => {
+  const setLanguage = useCallback((lang: string) => {
     if (languages[lang as LanguageCode]) {
       const newLang = lang as LanguageCode;
       localStorage.setItem('farmit-lang', newLang);
       setLanguageState(newLang);
     }
-  };
+  }, []);
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
-    if (isLoading && !Object.keys(translations).length) return ''; 
+    if (isInitiallyLoading) return ''; 
 
     let translatedText = getTranslation(translations, key);
     
@@ -107,15 +116,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return translatedText as string;
-  }, [translations, defaultTranslations, isLoading]);
+  }, [translations, defaultTranslations, isInitiallyLoading]);
 
   const value = useMemo(() => ({
     language,
     setLanguage,
     t,
-  }), [language, t]);
+  }), [language, setLanguage, t]);
   
-  if (isLoading && !Object.keys(defaultTranslations).length) {
+  if (isInitiallyLoading) {
       return (
          <div className="flex h-screen w-full items-center justify-center bg-background">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
