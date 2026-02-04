@@ -2,6 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
+import enTranslations from '@/locales/en.json';
+import bemTranslations from '@/locales/bem.json';
+import toiTranslations from '@/locales/toi.json';
+import lozTranslations from '@/locales/loz.json';
+
 // Define language data structure
 interface Translations {
   [key: string]: string | Translations;
@@ -23,6 +28,13 @@ export const languages = {
 };
 export type LanguageCode = keyof typeof languages;
 
+const allTranslations: Record<LanguageCode, Translations> = {
+  en: enTranslations,
+  bem: bemTranslations,
+  toi: toiTranslations,
+  loz: lozTranslations,
+};
+
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const getTranslation = (translations: Translations, key: string): string | undefined => {
@@ -36,57 +48,16 @@ const getTranslation = (translations: Translations, key: string): string | undef
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
-  const [translations, setTranslations] = useState<Translations>({});
-  const [defaultTranslations, setDefaultTranslations] = useState<Translations>({});
-  const [isInitiallyLoading, setIsInitiallyLoading] = useState(true);
 
-  // This effect runs once on mount to determine the initial language and load the default (English) translations.
+  // On mount, determine the initial language from localStorage or default to 'en'
   useEffect(() => {
     const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
     if (storedLang && languages[storedLang]) {
       setLanguageState(storedLang);
     }
-    
-    const loadDefault = async () => {
-      try {
-        const enModule = await import('@/locales/en.json');
-        setDefaultTranslations(enModule.default);
-      } catch (error) {
-        console.error(`Could not load default (en) translations`, error);
-      }
-    };
-    loadDefault();
   }, []);
-  
-  // This effect loads translations for the current language whenever it changes or when default translations become available.
-  useEffect(() => {
-    if (!Object.keys(defaultTranslations).length) return;
 
-    let isMounted = true;
-    const loadTranslations = async () => {
-      try {
-        const module = await import(`@/locales/${language}.json`);
-        if(isMounted) {
-            setTranslations(module.default);
-        }
-      } catch (error) {
-        console.error(`Could not load translations for ${language}, falling back to English.`, error);
-        if(isMounted){
-            setTranslations(defaultTranslations);
-        }
-      } finally {
-        if(isMounted){
-            setIsInitiallyLoading(false);
-        }
-      }
-    };
-    loadTranslations();
-
-    return () => {
-        isMounted = false;
-    }
-  }, [language, defaultTranslations]);
-
+  // Function to change the language
   const setLanguage = useCallback((lang: string) => {
     if (languages[lang as LanguageCode]) {
       const newLang = lang as LanguageCode;
@@ -95,20 +66,25 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // The translation function, memoized to update only when the language changes
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
-    if (isInitiallyLoading) return ''; 
+    const currentTranslations = allTranslations[language];
+    const defaultTranslations = allTranslations['en'];
 
-    let translatedText = getTranslation(translations, key);
+    let translatedText = getTranslation(currentTranslations, key);
     
+    // Fallback to English if translation is not found
     if (translatedText === undefined) {
       translatedText = getTranslation(defaultTranslations, key);
     }
 
+    // If still not found, return the key and log a warning
     if (translatedText === undefined) {
         console.warn(`Translation key not found: ${key}`);
         return key;
     }
 
+    // Replace placeholders like {name}
     if (options && typeof translatedText === 'string') {
       return Object.entries(options).reduce((acc, [optKey, optValue]) => {
         return acc.replace(`{${optKey}}`, String(optValue));
@@ -116,22 +92,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return translatedText as string;
-  }, [translations, defaultTranslations, isInitiallyLoading]);
+  }, [language]); // This function now only depends on the current language state
 
+  // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     language,
     setLanguage,
     t,
   }), [language, setLanguage, t]);
   
-  if (isInitiallyLoading) {
-      return (
-         <div className="flex h-screen w-full items-center justify-center bg-background">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-        </div>
-      )
-  }
-
   return (
     <LanguageContext.Provider value={value}>
       {children}
