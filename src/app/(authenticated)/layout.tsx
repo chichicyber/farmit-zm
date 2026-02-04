@@ -33,25 +33,28 @@ import { useEffect } from 'react';
 import { useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { FcmHandler } from '@/components/fcm-handler';
+import { useLanguage } from '@/contexts/language-context';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 type UserProfile = {
   role: string;
 };
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/education', label: 'Farmit Smart', icon: BrainCircuit },
-  { href: '/crops', label: 'Crop Tracking', icon: Tractor },
-  { href: '/animals', label: 'Animal Tracking', icon: Rabbit },
-  { href: '/animals/map', label: 'Animal Map', icon: Map },
-  { href: '/reminders', label: 'Reminders', icon: Bell },
-  { href: '/ai-advisor', label: 'AI Advisor', icon: Bot },
-  { href: '/farm-doctor', label: 'Farm Doctor', icon: HeartPulse },
+  { href: '/dashboard', labelKey: 'nav.dashboard', icon: Home },
+  { href: '/education', labelKey: 'nav.farmitSmart', icon: BrainCircuit },
+  { href: '/crops', labelKey: 'nav.cropTracking', icon: Tractor },
+  { href: '/animals', labelKey: 'nav.animalTracking', icon: Rabbit },
+  { href: '/animals/map', labelKey: 'nav.animalMap', icon: Map },
+  { href: '/reminders', labelKey: 'nav.reminders', icon: Bell },
+  { href: '/ai-advisor', labelKey: 'nav.aiAdvisor', icon: Bot },
+  { href: '/farm-doctor', labelKey: 'nav.farmDoctor', icon: HeartPulse },
 ];
 
-const adminNavItems = [{ href: '/admin', label: 'User Management', icon: Shield }];
+const adminNavItems = [{ href: '/admin', labelKey: 'nav.userManagement', icon: Shield }];
 
 function AuthenticatedLayoutContent({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
@@ -92,12 +95,12 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
                   )}
                   onClick={() => handleNavigate(item.href)}
                   tooltip={{
-                    children: item.label,
+                    children: t(item.labelKey),
                     className: 'group-data-[collapsible=icon]:block hidden',
                   }}
                 >
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -105,7 +108,7 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
               <>
                 <SidebarMenuItem className="mt-4 mb-2">
                   <span className="px-2 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden">
-                    Admin
+                    {t('nav.admin')}
                   </span>
                 </SidebarMenuItem>
                 {adminNavItems.map((item) => (
@@ -117,12 +120,12 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
                       )}
                       onClick={() => handleNavigate(item.href)}
                       tooltip={{
-                        children: item.label,
+                        children: t(item.labelKey),
                         className: 'group-data-[collapsible=icon]:block hidden',
                       }}
                     >
                       <item.icon />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -135,10 +138,10 @@ function AuthenticatedLayoutContent({ children }: { children: React.ReactNode })
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between border-b bg-card/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
+        <header className="flex h-14 items-center justify-between border-b bg-card/80 px-4 backdrop-blur-sm sm:px-6">
           <SidebarTrigger />
-          <div className="hidden md:block">
-            {/* Can add header content here if needed */}
+          <div className="flex flex-1 items-center justify-end gap-2">
+            <LanguageSwitcher />
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>

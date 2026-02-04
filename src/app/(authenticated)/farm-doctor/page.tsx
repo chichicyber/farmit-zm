@@ -31,6 +31,7 @@ import Image from 'next/image';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/language-context';
 
 const formSchema = z.object({
   question: z
@@ -93,6 +94,7 @@ const resizeAndProcessImage = (file: File): Promise<Blob> => {
 
 
 export default function FarmDoctorPage() {
+  const { t } = useLanguage();
   const [diagnosis, setDiagnosis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
@@ -124,7 +126,7 @@ export default function FarmDoctorPage() {
     const file = event.target.files?.[0];
     if (file) {
       setIsImageProcessing(true);
-      toast({ title: 'Processing Image...', description: 'Resizing and compressing your photo.' });
+      toast({ title: t('farmDoctor.imageProcessing.toast.title'), description: t('farmDoctor.imageProcessing.toast.description') });
       
       try {
         const blob = await resizeAndProcessImage(file);
@@ -135,10 +137,10 @@ export default function FarmDoctorPage() {
         }
         setImagePreview(URL.createObjectURL(blob));
         
-        toast({ title: 'Image Ready!', description: 'Your optimized photo is ready for diagnosis.' });
+        toast({ title: t('farmDoctor.imageReady.toast.title'), description: t('farmDoctor.imageReady.toast.description') });
       } catch (error) {
         console.error("Image processing error:", error);
-        toast({ variant: 'destructive', title: 'Image Processing Failed', description: 'Could not process the image. Please try another photo.' });
+        toast({ variant: 'destructive', title: t('farmDoctor.imageError.toast.title'), description: t('farmDoctor.imageError.toast.description') });
         setProcessedImage(null);
         setImagePreview(null);
       } finally {
@@ -191,8 +193,8 @@ export default function FarmDoctorPage() {
       console.error("Diagnosis submission error:", error);
       toast({
         variant: 'destructive',
-        title: 'Error Generating Diagnosis',
-        description: error.message || 'An unknown error occurred. Please try again.',
+        title: t('farmDoctor.diagnosisError.toast.title'),
+        description: error.message || t('farmDoctor.diagnosisError.toast.description'),
       });
     } finally {
       setIsLoading(false);
@@ -203,10 +205,10 @@ export default function FarmDoctorPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
-          <Stethoscope className="h-8 w-8 text-primary" /> Farm Doctor
+          <Stethoscope className="h-8 w-8 text-primary" /> {t('farmDoctor.title')}
         </h1>
         <p className="text-muted-foreground">
-          Get expert advice for your sick crops or animals.
+          {t('farmDoctor.description')}
         </p>
       </div>
 
@@ -214,9 +216,9 @@ export default function FarmDoctorPage() {
         <div className="md:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Submit a Case</CardTitle>
+              <CardTitle>{t('farmDoctor.submitCaseCard.title')}</CardTitle>
               <CardDescription>
-                Describe the issue and add a photo.
+                {t('farmDoctor.submitCaseCard.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -230,10 +232,10 @@ export default function FarmDoctorPage() {
                     name="question"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Describe the issue</FormLabel>
+                        <FormLabel>{t('farmDoctor.submitCaseCard.issueLabel')}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="e.g., 'My maize leaves have yellow spots' or 'My goat is not eating.'"
+                            placeholder={t('farmDoctor.submitCaseCard.issuePlaceholder')}
                             {...field}
                           />
                         </FormControl>
@@ -243,7 +245,7 @@ export default function FarmDoctorPage() {
                   />
 
                   <div className="space-y-2">
-                    <FormLabel>Add a photo (optional)</FormLabel>
+                    <FormLabel>{t('farmDoctor.submitCaseCard.photoLabel')}</FormLabel>
                     <input
                       type="file"
                       accept="image/*"
@@ -265,7 +267,7 @@ export default function FarmDoctorPage() {
                       ) : (
                         <Camera className="mr-2 h-4 w-4" />
                       )}
-                      {isImageProcessing ? 'Processing...' : 'Take or Upload Photo'}
+                      {isImageProcessing ? t('farmDoctor.submitCaseCard.processingButton') : t('farmDoctor.submitCaseCard.uploadButton')}
                     </Button>
                   </div>
 
@@ -273,7 +275,7 @@ export default function FarmDoctorPage() {
                     <div className="relative aspect-video w-full overflow-hidden rounded-md">
                       <Image
                         src={imagePreview}
-                        alt="Selected preview"
+                        alt={t('farmDoctor.submitCaseCard.imagePreviewAlt')}
                         fill
                         className="object-cover"
                       />
@@ -288,7 +290,7 @@ export default function FarmDoctorPage() {
                     {isLoading ? (
                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ): null}
-                    {isLoading ? 'Diagnosing...' : 'Get Diagnosis'}
+                    {isLoading ? t('farmDoctor.submitCaseCard.diagnosingButton') : t('farmDoctor.submitCaseCard.getDiagnosisButton')}
                   </Button>
                 </form>
               </Form>
@@ -301,7 +303,7 @@ export default function FarmDoctorPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-accent" />
-                AI-Powered Diagnosis
+                {t('farmDoctor.diagnosisCard.title')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -320,7 +322,7 @@ export default function FarmDoctorPage() {
               ) : (
                 <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-muted-foreground">
                   <Bot className="mx-auto h-12 w-12" />
-                  <p className="mt-4">Your diagnosis will appear here.</p>
+                  <p className="mt-4">{t('farmDoctor.diagnosisCard.placeholder')}</p>
                 </div>
               )}
             </CardContent>

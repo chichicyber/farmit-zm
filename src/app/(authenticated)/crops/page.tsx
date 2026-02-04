@@ -52,6 +52,7 @@ import { format, addDays, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { dummyCrops } from '@/lib/dummy-data';
+import { useLanguage } from '@/contexts/language-context';
 
 const cropSchema = z.object({
   cropType: z.string().min(1, 'Crop type is required'),
@@ -81,6 +82,7 @@ const mappedDummyCrops: Crop[] = dummyCrops.map(c => ({
 }));
 
 export default function CropsPage() {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [crops, setCrops] = useState<Crop[]>(mappedDummyCrops);
   const isLoading = false; // Data is loaded locally
@@ -108,8 +110,8 @@ export default function CropsPage() {
     setCrops(prev => [newCrop, ...prev]);
 
     toast({
-      title: 'Success!',
-      description: `${values.cropType} added to the local list. Reminders are not set for dummy data.`,
+      title: t('cropTracking.toast.addSuccess.title'),
+      description: t('cropTracking.toast.addSuccess.description', { cropType: values.cropType }),
     });
     form.reset();
     setIsDialogOpen(false);
@@ -120,24 +122,24 @@ export default function CropsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight">
-            Crop Tracking
+            {t('cropTracking.title')}
           </h1>
           <p className="text-muted-foreground">
-            Manage your crop cycles from planting to harvest.
+            {t('cropTracking.description')}
           </p>
         </div>
         <div className="flex w-full sm:w-auto">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full">
-                <PlusCircle /> Add Crop
+                <PlusCircle /> {t('cropTracking.addCropButton')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Add New Crop Record</DialogTitle>
+                <DialogTitle>{t('cropTracking.addDialog.title')}</DialogTitle>
                 <DialogDescription>
-                  Enter the details for the new crop or field you want to track.
+                  {t('cropTracking.addDialog.description')}
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -147,9 +149,9 @@ export default function CropsPage() {
                     name="cropType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Crop/Field Name</FormLabel>
+                        <FormLabel>{t('cropTracking.form.cropType.label')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Maize Field B" {...field} />
+                          <Input placeholder={t('cropTracking.form.cropType.placeholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -160,7 +162,7 @@ export default function CropsPage() {
                     name="plantingDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Planting Date</FormLabel>
+                        <FormLabel>{t('cropTracking.form.plantingDate.label')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -173,16 +175,16 @@ export default function CropsPage() {
                     name="growthStage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Current Growth Stage</FormLabel>
+                        <FormLabel>{t('cropTracking.form.growthStage.label')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a stage" />
+                              <SelectValue placeholder={t('cropTracking.form.growthStage.placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {growthStages.map(stage => (
-                              <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                              <SelectItem key={stage} value={stage}>{t(`growthStages.${stage.toLowerCase()}`)}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -195,7 +197,7 @@ export default function CropsPage() {
                     name="expectedHarvestDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Expected Harvest Date</FormLabel>
+                        <FormLabel>{t('cropTracking.form.expectedHarvestDate.label')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -205,10 +207,10 @@ export default function CropsPage() {
                   />
                   <DialogFooter>
                     <DialogClose asChild>
-                      <Button type="button" variant="secondary">Cancel</Button>
+                      <Button type="button" variant="secondary">{t('common.cancel')}</Button>
                     </DialogClose>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? 'Saving...' : 'Save Record'}
+                      {form.formState.isSubmitting ? t('common.saving') : t('common.saveRecord')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -220,18 +222,18 @@ export default function CropsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Crops</CardTitle>
+          <CardTitle>{t('cropTracking.yourCropsCard.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Planting Date</TableHead>
-                  <TableHead>Growth Stage</TableHead>
-                  <TableHead>Expected Harvest</TableHead>
-                  <TableHead>Upcoming Tasks</TableHead>
+                  <TableHead>{t('cropTracking.table.header.name')}</TableHead>
+                  <TableHead>{t('cropTracking.table.header.plantingDate')}</TableHead>
+                  <TableHead>{t('cropTracking.table.header.growthStage')}</TableHead>
+                  <TableHead>{t('cropTracking.table.header.expectedHarvest')}</TableHead>
+                  <TableHead>{t('cropTracking.table.header.upcomingTasks')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,21 +252,21 @@ export default function CropsPage() {
                     <TableRow key={crop.id}>
                       <TableCell className="font-medium">{crop.cropType}</TableCell>
                       <TableCell>{format(plantingDate, 'PPP')}</TableCell>
-                      <TableCell>{crop.growthStage}</TableCell>
+                      <TableCell>{t(`growthStages.${crop.growthStage.toLowerCase()}`)}</TableCell>
                       <TableCell>{format(crop.expectedHarvestDate, 'PPP')}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-2">
                             <Badge variant="outline" className="text-xs w-fit">
                                 <Grab className="mr-1 h-3 w-3" />
-                                Weed by: {format(addDays(plantingDate, 14), 'PPP')}
+                                {t('cropTracking.table.task.weedBy')}: {format(addDays(plantingDate, 14), 'PPP')}
                             </Badge>
                            <Badge variant="outline" className="text-xs w-fit">
                                 <Leaf className="mr-1 h-3 w-3" />
-                                Fertilize by: {format(addDays(plantingDate, 28), 'PPP')}
+                                {t('cropTracking.table.task.fertilizeBy')}: {format(addDays(plantingDate, 28), 'PPP')}
                             </Badge>
                            <Badge variant="outline" className="text-xs w-fit">
                                 <SprayCan className="mr-1 h-3 w-3" />
-                                Scout by: {format(addDays(plantingDate, 42), 'PPP')}
+                                {t('cropTracking.table.task.scoutBy')}: {format(addDays(plantingDate, 42), 'PPP')}
                             </Badge>
                         </div>
                       </TableCell>
@@ -273,7 +275,7 @@ export default function CropsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      No crops found. Add your first crop record to get started.
+                      {t('cropTracking.table.noCropsFound')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -285,5 +287,3 @@ export default function CropsPage() {
     </div>
   );
 }
-
-    

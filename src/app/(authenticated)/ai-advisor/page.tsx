@@ -1,3 +1,4 @@
+
 'use client';
 
 import { generateRecommendation } from '@/ai/flows/generate-growth-recommendations';
@@ -50,6 +51,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { format } from 'date-fns';
+import { useLanguage } from '@/contexts/language-context';
 
 const formSchema = z.object({
   cropType: z.string().min(1, 'Please select a crop type.'),
@@ -75,6 +77,7 @@ const growthStages = [
 ];
 
 export default function AiAdvisorPage() {
+  const { t } = useLanguage();
   const [recommendation, setRecommendation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -122,10 +125,10 @@ Recommendations:`;
       console.error(error);
       const description =
         error.message ||
-        'There was a problem getting a recommendation. Please try again.';
+        t('aiAdvisor.error.description');
       toast({
         variant: 'destructive',
-        title: 'Error Generating Recommendation',
+        title: t('aiAdvisor.error.title'),
         description: description,
       });
     } finally {
@@ -138,8 +141,8 @@ Recommendations:`;
     if (!recommendation || !formValues.cropType || !user?.uid || !firestore) {
       toast({
         variant: 'destructive',
-        title: 'Cannot Save',
-        description: 'No recommendation or user details available to save.',
+        title: t('aiAdvisor.saveError.title'),
+        description: t('aiAdvisor.saveError.description'),
       });
       return;
     }
@@ -157,16 +160,16 @@ Recommendations:`;
         adviceData
       );
       toast({
-        title: 'Advice Saved!',
-        description: 'Your recommendation has been saved to your history.',
+        title: t('aiAdvisor.saveSuccess.title'),
+        description: t('aiAdvisor.saveSuccess.description'),
       });
       setCurrentRecommendationSaved(true);
     } catch (error) {
       console.error('Error saving advice:', error);
       toast({
         variant: 'destructive',
-        title: 'Save Failed',
-        description: 'There was a problem saving your advice. Please try again.',
+        title: t('aiAdvisor.saveFailed.title'),
+        description: t('aiAdvisor.saveFailed.description'),
       });
     } finally {
       setIsSaving(false);
@@ -177,20 +180,18 @@ Recommendations:`;
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
-          <Bot className="h-8 w-8 text-primary" /> AI Growth Advisor
+          <Bot className="h-8 w-8 text-primary" /> {t('aiAdvisor.title')}
         </h1>
-        <p className="text-muted-foreground">
-          Get tailored suggestions to optimize your crop yield.
-        </p>
+        <p className="text-muted-foreground">{t('aiAdvisor.description')}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Get Advice</CardTitle>
+              <CardTitle>{t('aiAdvisor.getAdviceCard.title')}</CardTitle>
               <CardDescription>
-                Select your crop and its current stage.
+                {t('aiAdvisor.getAdviceCard.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -204,20 +205,20 @@ Recommendations:`;
                     name="cropType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Crop Type</FormLabel>
+                        <FormLabel>{t('aiAdvisor.getAdviceCard.cropTypeLabel')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a crop" />
+                              <SelectValue placeholder={t('aiAdvisor.getAdviceCard.cropTypePlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {cropTypes.map((crop) => (
                               <SelectItem key={crop} value={crop}>
-                                {crop}
+                                {t(`cropTypes.${crop.toLowerCase()}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -232,20 +233,20 @@ Recommendations:`;
                     name="growthStage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Growth Stage</FormLabel>
+                        <FormLabel>{t('aiAdvisor.getAdviceCard.growthStageLabel')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a stage" />
+                              <SelectValue placeholder={t('aiAdvisor.getAdviceCard.growthStagePlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {growthStages.map((stage) => (
                               <SelectItem key={stage} value={stage}>
-                                {stage}
+                                {t(`growthStages.${stage.toLowerCase()}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -255,7 +256,7 @@ Recommendations:`;
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Generating...' : 'Get Recommendation'}
+                    {isLoading ? t('aiAdvisor.getAdviceCard.generatingButton') : t('aiAdvisor.getAdviceCard.getRecommendationButton')}
                   </Button>
                 </form>
               </Form>
@@ -268,7 +269,7 @@ Recommendations:`;
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-accent" />
-                AI-Powered Recommendation
+                {t('aiAdvisor.recommendationCard.title')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -292,16 +293,16 @@ Recommendations:`;
                     >
                       <Save className="h-4 w-4" />
                       {isSaving
-                        ? 'Saving...'
+                        ? t('aiAdvisor.recommendationCard.savingButton')
                         : currentRecommendationSaved
-                        ? 'Saved'
-                        : 'Save Advice'}
+                        ? t('aiAdvisor.recommendationCard.savedButton')
+                        : t('aiAdvisor.recommendationCard.saveButton')}
                     </Button>
                   </div>
                 </>
               ) : (
                 <div className="py-10 text-center text-muted-foreground">
-                  <p>Your recommendation will appear here.</p>
+                  <p>{t('aiAdvisor.recommendationCard.placeholder')}</p>
                 </div>
               )}
             </CardContent>
@@ -312,10 +313,10 @@ Recommendations:`;
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
-            Advice History
+            {t('aiAdvisor.historyCard.title')}
           </CardTitle>
           <CardDescription>
-            Review your previously saved recommendations.
+            {t('aiAdvisor.historyCard.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -332,12 +333,12 @@ Recommendations:`;
                   <AccordionTrigger>
                     <div className="flex w-full items-center justify-between pr-4">
                       <span className="font-medium">
-                        {advice.cropType} - {advice.growthStage}
+                        {t(`cropTypes.${advice.cropType.toLowerCase()}`)} - {t(`growthStages.${advice.growthStage.toLowerCase()}`)}
                       </span>
                       <span className="text-sm text-muted-foreground">
                         {advice.createdAt
                           ? format(advice.createdAt.toDate(), 'PPP')
-                          : 'Date unavailable'}
+                          : t('common.dateUnavailable')}
                       </span>
                     </div>
                   </AccordionTrigger>
@@ -351,7 +352,7 @@ Recommendations:`;
             </Accordion>
           ) : (
             <div className="py-10 text-center text-muted-foreground">
-              <p>You haven't saved any advice yet.</p>
+              <p>{t('aiAdvisor.historyCard.noHistory')}</p>
             </div>
           )}
         </CardContent>
@@ -359,4 +360,3 @@ Recommendations:`;
     </div>
   );
 }
-    

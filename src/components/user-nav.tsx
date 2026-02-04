@@ -16,6 +16,7 @@ import { LogOut, User as UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useLanguage } from '@/contexts/language-context';
 
 type UserProfile = {
   firstName: string;
@@ -25,6 +26,7 @@ type UserProfile = {
 };
 
 export function UserNav() {
+  const { t } = useLanguage();
   const { user, logout } = useAppAuth();
   const auth = useAuth();
   const router = useRouter();
@@ -76,13 +78,13 @@ export function UserNav() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>{t('userNav.profile')}</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t('userNav.logOut')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

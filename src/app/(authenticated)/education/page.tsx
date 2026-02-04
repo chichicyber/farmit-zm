@@ -27,6 +27,7 @@ import { z } from 'zod';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateSmartInsight } from '@/ai/flows/generate-smart-insights';
+import { useLanguage } from '@/contexts/language-context';
 
 
 const formSchema = z.object({
@@ -34,9 +35,9 @@ const formSchema = z.object({
 });
 
 export default function FarmitSmartPage() {
+  const { t } = useLanguage();
   const [welcomeText, setWelcomeText] = useState('');
-  const welcomeMessage = 'Welcome to farm smart, any queries for today?';
-
+  
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -50,9 +51,10 @@ export default function FarmitSmartPage() {
 
   useEffect(() => {
     let i = 0;
+    const welcomeMessage = t('farmitSmart.welcome');
     const typingInterval = setInterval(() => {
       if (i < welcomeMessage.length) {
-        setWelcomeText((prev) => welcomeMessage.substring(0, i + 1));
+        setWelcomeText(welcomeMessage.substring(0, i + 1));
         i++;
       } else {
         clearInterval(typingInterval);
@@ -60,7 +62,7 @@ export default function FarmitSmartPage() {
     }, 50);
 
     return () => clearInterval(typingInterval);
-  }, []);
+  }, [t]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -72,8 +74,8 @@ export default function FarmitSmartPage() {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Error Getting Insight',
-        description: error.message || 'There was a problem getting an insight. Please try again.',
+        title: t('farmitSmart.error.title'),
+        description: error.message || t('farmitSmart.error.description'),
       });
     } finally {
       setIsLoading(false);
@@ -86,16 +88,16 @@ export default function FarmitSmartPage() {
       <div className="flex flex-col gap-2">
         <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
           <BrainCircuit className="h-8 w-8 text-primary" />
-          Farmit Smart
+          {t('farmitSmart.title')}
         </h1>
         <p className="h-5 text-muted-foreground">{welcomeText}</p>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Ask Farmit Smart</CardTitle>
+          <CardTitle>{t('farmitSmart.askCard.title')}</CardTitle>
           <CardDescription>
-            Have a question? Get instant advice from our AI-powered farming expert.
+            {t('farmitSmart.askCard.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,10 +108,10 @@ export default function FarmitSmartPage() {
                 name="question"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Question</FormLabel>
+                    <FormLabel>{t('farmitSmart.askCard.questionLabel')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., 'What is the best way to control weeds in a maize field?'"
+                        placeholder={t('farmitSmart.askCard.questionPlaceholder')}
                         {...field}
                       />
                     </FormControl>
@@ -118,7 +120,7 @@ export default function FarmitSmartPage() {
                 )}
               />
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Getting Insights...' : 'Get Insights'}
+                {isLoading ? t('farmitSmart.askCard.gettingInsightsButton') : t('farmitSmart.askCard.getInsightsButton')}
               </Button>
             </form>
           </Form>
@@ -128,7 +130,7 @@ export default function FarmitSmartPage() {
             <div className="mt-4 rounded-lg border bg-card p-4">
               <h4 className="flex items-center gap-2 font-semibold">
                  <Sparkles className="h-5 w-5 text-accent" />
-                 AI Insight
+                 {t('farmitSmart.askCard.aiInsightTitle')}
               </h4>
               <div className="mt-2 text-sm text-muted-foreground">
               {isLoading ? (
@@ -154,23 +156,19 @@ export default function FarmitSmartPage() {
             <div className="rounded-full bg-primary/10 p-3">
               <Sprout className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle>Agronomic Insights</CardTitle>
+            <CardTitle>{t('farmitSmart.agronomicInsights.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border bg-card p-4">
-              <h4 className="font-semibold">Crop Rotation</h4>
+              <h4 className="font-semibold">{t('farmitSmart.agronomicInsights.cropRotation.title')}</h4>
               <p className="text-sm text-muted-foreground">
-                Rotate your crops each season to improve soil health and reduce
-                pest and disease buildup. For example, follow maize with a
-                legume like soyabeans to naturally add nitrogen to the soil.
+                {t('farmitSmart.agronomicInsights.cropRotation.description')}
               </p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <h4 className="font-semibold">Planting Time</h4>
+              <h4 className="font-semibold">{t('farmitSmart.agronomicInsights.plantingTime.title')}</h4>
               <p className="text-sm text-muted-foreground">
-                Early planting at the onset of rains can help your crops
-                establish a strong root system before the dry spells,
-                significantly boosting potential yield.
+                {t('farmitSmart.agronomicInsights.plantingTime.description')}
               </p>
             </div>
           </CardContent>
@@ -181,26 +179,23 @@ export default function FarmitSmartPage() {
             <div className="rounded-full bg-destructive/10 p-3">
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
-            <CardTitle>Risk Alerts</CardTitle>
+            <CardTitle>{t('farmitSmart.riskAlerts.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
               <h4 className="font-semibold text-destructive">
-                Fall Armyworm Advisory
+                {t('farmitSmart.riskAlerts.fallArmyworm.title')}
               </h4>
               <p className="text-sm text-muted-foreground">
-                Reports indicate high Fall Armyworm activity. Scout your maize
-                fields (especially young plants) for signs of damage like
-                "windowpane" feeding and apply recommended pesticides if
-                necessary.
+                {t('farmitSmart.riskAlerts.fallArmyworm.description')}
               </p>
             </div>
              <div className="rounded-lg border border-accent/50 bg-accent/5 p-4">
               <h4 className="font-semibold text-accent-foreground/80">
-                Newcastle Disease
+                {t('farmitSmart.riskAlerts.newcastleDisease.title')}
               </h4>
               <p className="text-sm text-muted-foreground">
-                Ensure your poultry's vaccination schedule for Newcastle Disease is up to date. Biosecurity is key: limit visitor access and disinfect footwear before entering the coop.
+                {t('farmitSmart.riskAlerts.newcastleDisease.description')}
               </p>
             </div>
           </CardContent>
@@ -209,11 +204,11 @@ export default function FarmitSmartPage() {
 
        <Card>
         <CardHeader>
-            <CardTitle>How Farmit Smart Works</CardTitle>
+            <CardTitle>{t('farmitSmart.howItWorks.title')}</CardTitle>
         </CardHeader>
         <CardContent>
             <CardDescription>
-                This system uses rule-based logic based on agronomic best practices. When you add a new crop or animal and provide key dates (like planting or vaccination dates), Farmit Smart automatically populates your "Reminders" page with a schedule of crucial tasks. This helps you stay on track with fertilizing, weeding, vaccinations, and more, ensuring you never miss a critical step in your farming operations.
+                {t('farmitSmart.howItWorks.description')}
             </CardDescription>
         </CardContent>
        </Card>

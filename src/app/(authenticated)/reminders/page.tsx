@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, doc, orderBy, query, updateDoc, where, Timestamp } from 'firebase/firestore';
 import { Bell, Calendar, CheckCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/contexts/language-context';
 
 type Reminder = {
   id: string;
@@ -21,6 +22,7 @@ type Reminder = {
 };
 
 export default function RemindersPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -42,15 +44,15 @@ export default function RemindersPage() {
     try {
       await updateDoc(reminderRef, { isCompleted: true });
       toast({
-        title: 'Task Completed!',
-        description: 'The reminder has been marked as done.',
+        title: t('reminders.toast.completed.title'),
+        description: t('reminders.toast.completed.description'),
       });
     } catch (error) {
       console.error('Error completing reminder:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Could not update the reminder. Please try again.',
+        title: t('reminders.toast.error.title'),
+        description: t('reminders.toast.error.description'),
       });
     }
   };
@@ -58,7 +60,7 @@ export default function RemindersPage() {
   const getDueDateString = (dueDate: Date) => {
     const now = new Date();
     if (dueDate < now) {
-      return `${formatDistanceToNow(dueDate, { addSuffix: true })} (Overdue)`;
+      return `${formatDistanceToNow(dueDate, { addSuffix: true })} (${t('reminders.overdue')})`;
     }
     return formatDistanceToNow(dueDate, { addSuffix: true });
   }
@@ -68,18 +70,18 @@ export default function RemindersPage() {
       <div>
         <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
           <Bell className="h-8 w-8 text-primary"/>
-          Smart Reminders
+          {t('reminders.title')}
         </h1>
         <p className="text-muted-foreground">
-          Automatically generated tasks to keep your farm on track.
+          {t('reminders.description')}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Tasks</CardTitle>
+          <CardTitle>{t('reminders.upcomingTasksCard.title')}</CardTitle>
           <CardDescription>
-            Here are your pending activities, prioritized for you.
+            {t('reminders.upcomingTasksCard.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -105,25 +107,25 @@ export default function RemindersPage() {
                               {getDueDateString(reminder.dueDate.toDate())} on {format(reminder.dueDate.toDate(), 'PPP')}
                             </span>
                         </div>
-                        <Badge variant="outline">{reminder.category}</Badge>
+                        <Badge variant="outline">{t(`reminders.categories.${reminder.category.toLowerCase()}`)}</Badge>
                         <Badge 
                            variant={reminder.priority === 'High' ? 'destructive' : reminder.priority === 'Medium' ? 'secondary' : 'outline'}
                         >
-                            {reminder.priority} Priority
+                            {t(`reminders.priorities.${reminder.priority.toLowerCase()}`)} {t('reminders.prioritySuffix')}
                         </Badge>
                     </div>
                   </div>
                   <div className="ml-auto mt-2 sm:mt-0">
                     <Button onClick={() => handleMarkAsDone(reminder.id)} size="sm">
                         <CheckCircle className="h-4 w-4" />
-                        <span>Mark as Done</span>
+                        <span>{t('reminders.markAsDoneButton')}</span>
                     </Button>
                   </div>
                 </div>
               ))
             ) : (
               <div className="py-10 text-center text-muted-foreground">
-                <p>No upcoming reminders. Your farm is all caught up!</p>
+                <p>{t('reminders.noUpcoming')}</p>
               </div>
             )}
           </div>

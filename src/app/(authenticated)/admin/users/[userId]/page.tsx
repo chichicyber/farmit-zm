@@ -37,6 +37,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { format } from 'date-fns';
+import { useLanguage } from '@/contexts/language-context';
 
 type UserProfile = {
   firstName: string;
@@ -56,6 +57,7 @@ export default function UserStatisticsPage({
 }: {
   params: { userId: string };
 }) {
+  const { t } = useLanguage();
   const { userId } = params;
   const firestore = useFirestore();
 
@@ -124,17 +126,17 @@ export default function UserStatisticsPage({
 
   const healthChartData = [
     {
-      status: 'Healthy',
+      status: t('animalHealth.healthy'),
       count: animalHealthStats.healthy,
       fill: 'hsl(var(--primary))',
     },
     {
-      status: 'Observation',
+      status: t('animalHealth.observation'),
       count: animalHealthStats.observation,
       fill: 'hsl(var(--accent))',
     },
     {
-      status: 'Sick',
+      status: t('animalHealth.sick'),
       count: animalHealthStats.sick,
       fill: 'hsl(var(--destructive))',
     },
@@ -153,13 +155,13 @@ export default function UserStatisticsPage({
           <div className="flex flex-col items-center justify-center h-full text-center">
               <Card className="w-full max-w-md">
                   <CardHeader>
-                      <CardTitle className="text-destructive">Error Loading User</CardTitle>
-                      <CardDescription>There was a problem retrieving the user data. This could be due to a network issue or insufficient permissions.</CardDescription>
+                      <CardTitle className="text-destructive">{t('userStats.error.title')}</CardTitle>
+                      <CardDescription>{t('userStats.error.description')}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                      <p className="text-sm text-muted-foreground">Please check the console for more details and ensure you have the correct permissions to view this page.</p>
+                      <p className="text-sm text-muted-foreground">{t('userStats.error.checkConsole')}</p>
                       <Button asChild variant="outline" className="mt-4">
-                          <Link href="/admin">Back to User List</Link>
+                          <Link href="/admin">{t('userStats.backButton')}</Link>
                       </Button>
                   </CardContent>
               </Card>
@@ -172,12 +174,12 @@ export default function UserStatisticsPage({
           <div className="flex flex-col items-center justify-center h-full text-center">
               <Card className="w-full max-w-md">
                   <CardHeader>
-                      <CardTitle>User Not Found</CardTitle>
-                      <CardDescription>The requested user does not exist.</CardDescription>
+                      <CardTitle>{t('userStats.notFound.title')}</CardTitle>
+                      <CardDescription>{t('userStats.notFound.description')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                       <Button asChild variant="outline" className="mt-4">
-                          <Link href="/admin">Back to User List</Link>
+                          <Link href="/admin">{t('userStats.backButton')}</Link>
                       </Button>
                   </CardContent>
               </Card>
@@ -207,7 +209,7 @@ export default function UserStatisticsPage({
           <div className="flex items-center gap-2">
             <p className="text-muted-foreground">{user?.email}</p>
             <Badge variant="secondary" className="capitalize">
-              {user?.role}
+              {t(`roles.${user?.role}`)}
             </Badge>
           </div>
         </div>
@@ -215,47 +217,47 @@ export default function UserStatisticsPage({
 
       <div className="flex justify-start">
         <Button asChild variant="outline">
-          <Link href="/admin">Back to User List</Link>
+          <Link href="/admin">{t('userStats.backButton')}</Link>
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Tracked Crops"
+          title={t('userStats.statCards.trackedCrops.title')}
           value={crops?.length}
           icon={Tractor}
           isLoading={isLoading}
-          unit="Fields"
+          unit={t('userStats.statCards.trackedCrops.unit')}
         />
         <StatCard
-          title="Tracked Animals"
+          title={t('userStats.statCards.trackedAnimals.title')}
           value={animals?.length}
           icon={Rabbit}
           isLoading={isLoading}
-          unit="Animals"
+          unit={t('userStats.statCards.trackedAnimals.unit')}
         />
         <StatCard
-          title="AI Advisor Uses"
+          title={t('userStats.statCards.aiAdvisorUses.title')}
           value={advices?.length}
           icon={Bot}
           isLoading={isLoading}
-          unit="Times"
+          unit={t('userStats.statCards.aiAdvisorUses.unit')}
         />
         <StatCard
-          title="AI Doctor Uses"
+          title={t('userStats.statCards.aiDoctorUses.title')}
           value={diagnoses?.length}
           icon={Stethoscope}
           isLoading={isLoading}
-          unit="Times"
+          unit={t('userStats.statCards.aiDoctorUses.unit')}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Animal Health Summary</CardTitle>
+            <CardTitle>{t('userStats.healthSummary.title')}</CardTitle>
             <CardDescription>
-              Breakdown of livestock health status.
+              {t('userStats.healthSummary.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -279,7 +281,7 @@ export default function UserStatisticsPage({
               </ChartContainer>
             ) : (
               <div className="flex h-[250px] items-center justify-center text-center text-muted-foreground">
-                <p>No animal health data available.</p>
+                <p>{t('userStats.healthSummary.noData')}</p>
               </div>
             )}
           </CardContent>
@@ -287,7 +289,7 @@ export default function UserStatisticsPage({
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>User Details</CardTitle>
+              <CardTitle>{t('userStats.userDetails.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading ? (
@@ -300,19 +302,19 @@ export default function UserStatisticsPage({
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      Registered:{' '}
+                      {t('userStats.userDetails.registered')}:{' '}
                       {user?.createdAt ? (
                         format(user.createdAt.toDate(), 'PPP')
                       ) : (
                         <span className="text-muted-foreground">
-                          Not available
+                          {t('common.notAvailable')}
                         </span>
                       )}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                     <span className="text-sm capitalize">Role: {user?.role}</span>
+                     <span className="text-sm capitalize">{t('userStats.userDetails.role')}: {t(`roles.${user?.role}`)}</span>
                   </div>
                 </>
               )}
@@ -320,14 +322,14 @@ export default function UserStatisticsPage({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Overall Farm Performance</CardTitle>
+              <CardTitle>{t('userStats.performance.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <Skeleton className="h-8 w-full" />
               ) : (
                 <div className="flex items-center justify-center text-center text-muted-foreground py-4">
-                  <p>Performance analytics coming soon.</p>
+                  <p>{t('userStats.performance.comingSoon')}</p>
                 </div>
               )}
             </CardContent>
@@ -367,5 +369,3 @@ function StatCard({
     </Card>
   );
 }
-
-    

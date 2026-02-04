@@ -40,6 +40,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { format, addMonths } from 'date-fns';
 import { generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
 import type { WeatherForecast } from '@/ai/types';
+import { useLanguage } from '@/contexts/language-context';
 
 type Crop = {
   id: string;
@@ -64,6 +65,7 @@ const weatherIcons: { [key: string]: React.ElementType } = {
 };
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const farmImage = PlaceHolderImages.find((p) => p.id === 'hero-farm');
   const { user } = useAuth();
   const firestore = useFirestore();
@@ -187,10 +189,10 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold font-headline tracking-tight">
-          Farm Dashboard
+          {t('dashboard.title')}
         </h1>
         <p className="text-muted-foreground">
-          Welcome back! Here&apos;s a summary of your farm&apos;s activities.
+          {t('dashboard.description')}
         </p>
       </div>
 
@@ -199,14 +201,14 @@ export default function DashboardPage() {
           variant="destructive"
           className="w-full animate-shake md:w-auto"
         >
-          <HeartPulse /> Farm Doctor
+          <HeartPulse /> {t('dashboard.farmDoctorButton')}
         </Button>
       </Link>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Crops</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.statCards.totalCrops.title')}</CardTitle>
             <Tractor className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -215,10 +217,10 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {crops?.length ?? 0} Fields
+                  {crops?.length ?? 0} {t('dashboard.statCards.totalCrops.unit')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Tracked in your account
+                  {t('dashboard.statCards.totalCrops.description')}
                 </p>
               </>
             )}
@@ -227,7 +229,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Livestock Count
+              {t('dashboard.statCards.livestockCount.title')}
             </CardTitle>
             <Rabbit className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -237,10 +239,10 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {animals?.length ?? 0} Animals
+                  {animals?.length ?? 0} {t('dashboard.statCards.livestockCount.unit')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Across all your herds
+                  {t('dashboard.statCards.livestockCount.description')}
                 </p>
               </>
             )}
@@ -249,7 +251,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Upcoming Tasks
+              {t('dashboard.statCards.upcomingTasks.title')}
             </CardTitle>
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -259,10 +261,10 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {reminders?.length ?? 0} Reminders
+                  {reminders?.length ?? 0} {t('dashboard.statCards.upcomingTasks.unit')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Pending in your schedule
+                  {t('dashboard.statCards.upcomingTasks.description')}
                 </p>
               </>
             )}
@@ -271,12 +273,12 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <Link href="/crops" passHref>
             <Button className="w-full">
-              <PlusCircle /> Add New Crop
+              <PlusCircle /> {t('dashboard.addNewCropButton')}
             </Button>
           </Link>
           <Link href="/animals" passHref>
             <Button variant="secondary" className="w-full">
-              <PlusCircle /> Add New Animal
+              <PlusCircle /> {t('dashboard.addNewAnimalButton')}
             </Button>
           </Link>
         </div>
@@ -285,9 +287,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Yield Projection</CardTitle>
+            <CardTitle>{t('dashboard.yieldProjection.title')}</CardTitle>
             <CardDescription>
-              Crops scheduled for harvest in the next 6 months.
+              {t('dashboard.yieldProjection.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -317,11 +319,9 @@ export default function DashboardPage() {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <div className="flex h-[250px] w-full items-center justify-center text-center text-muted-foreground">
-                <p>
-                  No crop data available. <br /> Add a crop to see your yield
-                  projection.
-                </p>
+              <div className="flex h-[250px] w-full flex-col items-center justify-center text-center text-muted-foreground">
+                <p>{t('dashboard.yieldProjection.noData.line1')}</p>
+                <p>{t('dashboard.yieldProjection.noData.line2')}</p>
               </div>
             )}
           </CardContent>
@@ -329,7 +329,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Weather Forecast</CardTitle>
+              <CardTitle>{t('dashboard.weather.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isForecastLoading ? (
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-center gap-2">
                         <Icon className="h-6 w-6 text-accent" />
-                        <span>{weather.day}</span>
+                        <span>{t(`dashboard.weather.${weather.day.toLowerCase()}`)}</span>
                       </div>
                       <span className="font-medium">{weather.temp}</span>
                     </div>
@@ -377,8 +377,8 @@ export default function DashboardPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-primary-foreground">
-                <h3 className="font-bold">Your Farm</h3>
-                <p className="text-sm">A beautiful view</p>
+                <h3 className="font-bold">{t('dashboard.yourFarm.title')}</h3>
+                <p className="text-sm">{t('dashboard.yourFarm.description')}</p>
               </div>
             </div>
           )}

@@ -1,0 +1,547 @@
+{
+  "app": {
+    "name": "Farmit-ZM"
+  },
+  "common": {
+    "all": "All",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "saving": "Saving...",
+    "saveRecord": "Save Record",
+    "saveChanges": "Save Changes",
+    "areYouSure": "Are you sure?",
+    "notAvailable": "Not available",
+    "dateUnavailable": "Date unavailable"
+  },
+  "languageSwitcher": {
+    "tooltip": "Change language"
+  },
+  "userNav": {
+    "profile": "Profile",
+    "logOut": "Log out"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "farmitSmart": "Farmit Smart",
+    "cropTracking": "Crop Tracking",
+    "animalTracking": "Animal Tracking",
+    "animalMap": "Animal Map",
+    "reminders": "Reminders",
+    "aiAdvisor": "AI Advisor",
+    "farmDoctor": "Farm Doctor",
+    "userManagement": "User Management",
+    "admin": "Admin"
+  },
+  "roles": {
+    "farmer": "Farmer",
+    "student": "Student",
+    "user": "User",
+    "admin": "Admin"
+  },
+  "login": {
+    "title": "Welcome Back",
+    "description": "Enter your credentials to access your farm dashboard.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signInButton": "Sign In",
+    "signingInButton": "Signing In...",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "toast": {
+      "loginFailed": {
+        "title": "Login Failed",
+        "description": "User not found or password incorrect. Please sign up if you are a new user."
+      }
+    }
+  },
+  "signup": {
+    "title": "Create an Account",
+    "description": "Join our community of modern farmers in Zambia.",
+    "firstNameLabel": "First Name",
+    "firstNamePlaceholder": "John",
+    "lastNameLabel": "Last Name",
+    "lastNamePlaceholder": "Banda",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "roleLabel": "I am a...",
+    "rolePlaceholder": "Select your role",
+    "signUpButton": "Sign Up",
+    "creatingAccountButton": "Creating Account...",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "toast": {
+      "success": {
+        "title": "Account Created",
+        "description": "You've been successfully signed up! Redirecting..."
+      },
+      "failure": {
+        "title": "Sign Up Failed",
+        "unknownError": "An unexpected error occurred.",
+        "emailInUse": "This email is already in use. Please try signing in."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Farm Dashboard",
+    "description": "Welcome back! Here's a summary of your farm's activities.",
+    "farmDoctorButton": "Farm Doctor",
+    "addNewCropButton": "Add New Crop",
+    "addNewAnimalButton": "Add New Animal",
+    "statCards": {
+      "totalCrops": {
+        "title": "Total Crops",
+        "unit": "Fields",
+        "description": "Tracked in your account"
+      },
+      "livestockCount": {
+        "title": "Livestock Count",
+        "unit": "Animals",
+        "description": "Across all your herds"
+      },
+      "upcomingTasks": {
+        "title": "Upcoming Tasks",
+        "unit": "Reminders",
+        "description": "Pending in your schedule"
+      }
+    },
+    "yieldProjection": {
+      "title": "Yield Projection",
+      "description": "Crops scheduled for harvest in the next 6 months.",
+      "noData": {
+        "line1": "No crop data available.",
+        "line2": "Add a crop to see your yield projection."
+      }
+    },
+    "weather": {
+      "title": "Weather Forecast",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "nextday": "Next Day"
+    },
+    "yourFarm": {
+      "title": "Your Farm",
+      "description": "A beautiful view"
+    }
+  },
+  "farmitSmart": {
+    "title": "Farmit Smart",
+    "welcome": "Welcome to farm smart, any queries for today?",
+    "askCard": {
+      "title": "Ask Farmit Smart",
+      "description": "Have a question? Get instant advice from our AI-powered farming expert.",
+      "questionLabel": "Your Question",
+      "questionPlaceholder": "e.g., 'What is the best way to control weeds in a maize field?'",
+      "getInsightsButton": "Get Insights",
+      "gettingInsightsButton": "Getting Insights...",
+      "aiInsightTitle": "AI Insight"
+    },
+    "error": {
+      "title": "Error Getting Insight",
+      "description": "There was a problem getting an insight. Please try again."
+    },
+    "agronomicInsights": {
+      "title": "Agronomic Insights",
+      "cropRotation": {
+        "title": "Crop Rotation",
+        "description": "Rotate your crops each season to improve soil health and reduce pest and disease buildup. For example, follow maize with a legume like soyabeans to naturally add nitrogen to the soil."
+      },
+      "plantingTime": {
+        "title": "Planting Time",
+        "description": "Early planting at the onset of rains can help your crops establish a strong root system before the dry spells, significantly boosting potential yield."
+      }
+    },
+    "riskAlerts": {
+      "title": "Risk Alerts",
+      "fallArmyworm": {
+        "title": "Fall Armyworm Advisory",
+        "description": "Reports indicate high Fall Armyworm activity. Scout your maize fields (especially young plants) for signs of damage like \"windowpane\" feeding and apply recommended pesticides if necessary."
+      },
+      "newcastleDisease": {
+        "title": "Newcastle Disease",
+        "description": "Ensure your poultry's vaccination schedule for Newcastle Disease is up to date. Biosecurity is key: limit visitor access and disinfect footwear before entering the coop."
+      }
+    },
+    "howItWorks": {
+      "title": "How Farmit Smart Works",
+      "description": "This system uses rule-based logic based on agronomic best practices. When you add a new crop or animal and provide key dates (like planting or vaccination dates), Farmit Smart automatically populates your \"Reminders\" page with a schedule of crucial tasks. This helps you stay on track with fertilizing, weeding, vaccinations, and more, ensuring you never miss a critical step in your farming operations."
+    }
+  },
+  "cropTracking": {
+    "title": "Crop Tracking",
+    "description": "Manage your crop cycles from planting to harvest.",
+    "addCropButton": "Add Crop",
+    "addDialog": {
+      "title": "Add New Crop Record",
+      "description": "Enter the details for the new crop or field you want to track."
+    },
+    "form": {
+      "cropType": {
+        "label": "Crop/Field Name",
+        "placeholder": "e.g., Maize Field B"
+      },
+      "plantingDate": {
+        "label": "Planting Date"
+      },
+      "growthStage": {
+        "label": "Current Growth Stage",
+        "placeholder": "Select a stage"
+      },
+      "expectedHarvestDate": {
+        "label": "Expected Harvest Date"
+      }
+    },
+    "yourCropsCard": {
+      "title": "Your Crops"
+    },
+    "table": {
+      "header": {
+        "name": "Name",
+        "plantingDate": "Planting Date",
+        "growthStage": "Growth Stage",
+        "expectedHarvest": "Expected Harvest",
+        "upcomingTasks": "Upcoming Tasks"
+      },
+      "task": {
+        "weedBy": "Weed by",
+        "fertilizeBy": "Fertilize by",
+        "scoutBy": "Scout by"
+      },
+      "noCropsFound": "No crops found. Add your first crop record to get started."
+    },
+    "toast": {
+      "addSuccess": {
+        "title": "Success!",
+        "description": "{cropType} added to the local list. Reminders are not set for dummy data."
+      }
+    }
+  },
+  "animalTracking": {
+    "title": "Animal Tracking",
+    "description": "Keep records of your livestock's health and status.",
+    "viewMapButton": "View Map",
+    "addAnimalButton": "Add Animal",
+    "addDialog": {
+      "title": "Add New Animal Record",
+      "description": "Enter the details for the new animal you want to track."
+    },
+    "editDialog": {
+      "title": "Edit Animal Record",
+      "description": "Update the details for the selected animal."
+    },
+    "deleteDialog": {
+      "description": "This action cannot be undone. This will permanently delete the animal record for tag {tagId}."
+    },
+    "form": {
+      "tagId": {
+        "label": "Tag ID",
+        "placeholder": "e.g., ZM-C-003"
+      },
+      "animalType": {
+        "label": "Animal Type",
+        "placeholder": "Select a type"
+      },
+      "healthStatus": {
+        "label": "Health Status",
+        "placeholder": "Select a status"
+      },
+      "nextVaccinationDate": {
+        "label": "Next Vaccination Date"
+      },
+      "feedingSchedule": {
+        "label": "Feeding Schedule",
+        "placeholder": "e.g., 'Twice daily with high-protein feed.'"
+      },
+      "latitude": {
+        "label": "Latitude"
+      },
+      "longitude": {
+        "label": "Longitude"
+      }
+    },
+    "livestockCard": {
+      "title": "Your Livestock",
+      "filterAriaLabel": "Select animal type",
+      "filterPlaceholder": "Filter by type..."
+    },
+    "table": {
+      "header": {
+        "tagId": "Tag ID",
+        "type": "Type",
+        "healthStatus": "Health Status",
+        "schedules": "Schedules",
+        "actions": "Actions"
+      },
+      "feed": "Feed",
+      "vax": "Vax",
+      "editSr": "Edit Animal",
+      "deleteSr": "Delete Animal",
+      "noAnimalsFound": "No animals of this type found."
+    },
+    "toast": {
+      "addSuccess": {
+        "title": "Success!",
+        "description": "Animal with tag {tagId} has been added to the local list."
+      },
+      "editSuccess": {
+        "title": "Success!",
+        "description": "Animal with tag {tagId} has been updated in the local list."
+      },
+      "deleteSuccess": {
+        "title": "Animal record deleted.",
+        "description": "The record for tag {tagId} has been removed from the local list."
+      }
+    }
+  },
+  "animalMap": {
+    "title": "Animal Map View",
+    "description": "Monitor your livestock locations across different fields using OpenStreetMap.",
+    "loading": "Loading map...",
+    "loadingMap": "Loading Map...",
+    "noData": "No animals with location data found.",
+    "controls": {
+      "title": "Map Controls",
+      "description": "Select a field to view.",
+      "fieldLabel": "Field to View",
+      "fieldPlaceholder": "Select a field"
+    },
+    "popup": {
+      "tagId": "Tag ID",
+      "type": "Type",
+      "outOfBounds": "Outside Geofence"
+    }
+  },
+  "reminders": {
+    "title": "Smart Reminders",
+    "description": "Automatically generated tasks to keep your farm on track.",
+    "overdue": "Overdue",
+    "prioritySuffix": "Priority",
+    "markAsDoneButton": "Mark as Done",
+    "noUpcoming": "No upcoming reminders. Your farm is all caught up!",
+    "upcomingTasksCard": {
+      "title": "Upcoming Tasks",
+      "description": "Here are your pending activities, prioritized for you."
+    },
+    "categories": {
+      "crops": "Crops",
+      "animals": "Animals",
+      "general": "General"
+    },
+    "priorities": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "toast": {
+      "completed": {
+        "title": "Task Completed!",
+        "description": "The reminder has been marked as done."
+      },
+      "error": {
+        "title": "Error",
+        "description": "Could not update the reminder. Please try again."
+      }
+    }
+  },
+  "aiAdvisor": {
+    "title": "AI Growth Advisor",
+    "description": "Get tailored suggestions to optimize your crop yield.",
+    "getAdviceCard": {
+      "title": "Get Advice",
+      "description": "Select your crop and its current stage.",
+      "cropTypeLabel": "Crop Type",
+      "cropTypePlaceholder": "Select a crop",
+      "growthStageLabel": "Growth Stage",
+      "growthStagePlaceholder": "Select a stage",
+      "getRecommendationButton": "Get Recommendation",
+      "generatingButton": "Generating..."
+    },
+    "recommendationCard": {
+      "title": "AI-Powered Recommendation",
+      "placeholder": "Your recommendation will appear here.",
+      "saveButton": "Save Advice",
+      "savingButton": "Saving...",
+      "savedButton": "Saved"
+    },
+    "historyCard": {
+      "title": "Advice History",
+      "description": "Review your previously saved recommendations.",
+      "noHistory": "You haven't saved any advice yet."
+    },
+    "error": {
+      "title": "Error Generating Recommendation",
+      "description": "There was a problem getting a recommendation. Please try again."
+    },
+    "saveError": {
+      "title": "Cannot Save",
+      "description": "No recommendation or user details available to save."
+    },
+    "saveSuccess": {
+      "title": "Advice Saved!",
+      "description": "Your recommendation has been saved to your history."
+    },
+    "saveFailed": {
+      "title": "Save Failed",
+      "description": "There was a problem saving your advice. Please try again."
+    }
+  },
+  "farmDoctor": {
+    "title": "Farm Doctor",
+    "description": "Get expert advice for your sick crops or animals.",
+    "submitCaseCard": {
+      "title": "Submit a Case",
+      "description": "Describe the issue and add a photo.",
+      "issueLabel": "Describe the issue",
+      "issuePlaceholder": "e.g., 'My maize leaves have yellow spots' or 'My goat is not eating.'",
+      "photoLabel": "Add a photo (optional)",
+      "uploadButton": "Take or Upload Photo",
+      "processingButton": "Processing...",
+      "imagePreviewAlt": "Selected preview",
+      "getDiagnosisButton": "Get Diagnosis",
+      "diagnosingButton": "Diagnosing..."
+    },
+    "diagnosisCard": {
+      "title": "AI-Powered Diagnosis",
+      "placeholder": "Your diagnosis will appear here."
+    },
+    "imageProcessing": {
+      "toast": {
+        "title": "Processing Image...",
+        "description": "Resizing and compressing your photo."
+      }
+    },
+    "imageReady": {
+      "toast": {
+        "title": "Image Ready!",
+        "description": "Your optimized photo is ready for diagnosis."
+      }
+    },
+    "imageError": {
+      "toast": {
+        "title": "Image Processing Failed",
+        "description": "Could not process the image. Please try another photo."
+      }
+    },
+    "diagnosisError": {
+      "toast": {
+        "title": "Error Generating Diagnosis",
+        "description": "An unknown error occurred. Please try again."
+      }
+    }
+  },
+  "admin": {
+    "title": "User Management",
+    "description": "View, create, and manage all users in the system.",
+    "addNewUserButton": "Add New User",
+    "addUserDialog": {
+      "title": "Add New User",
+      "description": "Create a new user account and assign a role.",
+      "firstNameLabel": "First Name",
+      "firstNamePlaceholder": "John",
+      "lastNameLabel": "Last Name",
+      "lastNamePlaceholder": "Banda",
+      "emailLabel": "Email",
+      "emailPlaceholder": "farmer@farmit.com",
+      "passwordLabel": "Password",
+      "roleLabel": "Role",
+      "rolePlaceholder": "Select a role",
+      "createUserButton": "Create User",
+      "creatingButton": "Creating..."
+    },
+    "allUsersCard": {
+      "title": "All Users",
+      "description": "A list of all users who have registered on the platform.",
+      "searchPlaceholder": "Search by name or email...",
+      "filterPlaceholder": "Filter by role..."
+    },
+    "usersTable": {
+      "nameHeader": "Name",
+      "emailHeader": "Email",
+      "roleHeader": "Role",
+      "actionsHeader": "Actions",
+      "viewAccountButton": "View Account",
+      "editButton": "Edit",
+      "noUsersFound": "No users found."
+    },
+    "userCreatedToast": {
+      "title": "User Created",
+      "description": "Successfully created account for {email}."
+    },
+    "userCreateErrorToast": {
+      "title": "Error Creating User",
+      "emailInUse": "This email address is already in use.",
+      "unknownError": "An unknown error occurred."
+    }
+  },
+  "userStats": {
+    "backButton": "Back to User List",
+    "error": {
+      "title": "Error Loading User",
+      "description": "There was a problem retrieving the user data. This could be due to a network issue or insufficient permissions.",
+      "checkConsole": "Please check the console for more details and ensure you have the correct permissions to view this page."
+    },
+    "notFound": {
+      "title": "User Not Found",
+      "description": "The requested user does not exist."
+    },
+    "statCards": {
+      "trackedCrops": {
+        "title": "Tracked Crops",
+        "unit": "Fields"
+      },
+      "trackedAnimals": {
+        "title": "Tracked Animals",
+        "unit": "Animals"
+      },
+      "aiAdvisorUses": {
+        "title": "AI Advisor Uses",
+        "unit": "Times"
+      },
+      "aiDoctorUses": {
+        "title": "AI Doctor Uses",
+        "unit": "Times"
+      }
+    },
+    "healthSummary": {
+      "title": "Animal Health Summary",
+      "description": "Breakdown of livestock health status.",
+      "noData": "No animal health data available."
+    },
+    "userDetails": {
+      "title": "User Details",
+      "registered": "Registered",
+      "role": "Role"
+    },
+    "performance": {
+      "title": "Overall Farm Performance",
+      "comingSoon": "Performance analytics coming soon."
+    }
+  },
+  "animalHealth": {
+    "healthy": "Healthy",
+    "underobservation": "Under Observation",
+    "sick": "Sick"
+  },
+  "growthStages": {
+    "planting": "Planting",
+    "germination": "Germination",
+    "vegetative": "Vegetative",
+    "flowering": "Flowering",
+    "harvesting": "Harvesting"
+  },
+  "animalTypes": {
+    "cattle": "Cattle",
+    "goat": "Goat",
+    "chicken": "Chicken",
+    "pig": "Pig",
+    "sheep": "Sheep"
+  },
+  "cropTypes": {
+    "maize": "Maize",
+    "soyabeans": "Soyabeans",
+    "wheat": "Wheat",
+    "groundnuts": "Groundnuts",
+    "cotton": "Cotton"
+  }
+}

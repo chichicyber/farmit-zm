@@ -65,6 +65,7 @@ import { z } from 'zod';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { dummyAnimals } from '@/lib/dummy-data';
+import { useLanguage } from '@/contexts/language-context';
 
 const animalSchema = z.object({
   tagId: z.string().min(1, 'Tag ID is required'),
@@ -113,6 +114,7 @@ const mappedDummyAnimals: Animal[] = dummyAnimals.map(a => ({
 }));
 
 export default function AnimalsPage() {
+  const { t } = useLanguage();
   const [animals, setAnimals] = useState<Animal[]>(mappedDummyAnimals);
   const isLoading = false; // Data is loaded locally
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -149,8 +151,8 @@ export default function AnimalsPage() {
     setAnimals(prev => [newAnimal, ...prev]);
 
     toast({
-        title: 'Success!',
-        description: `Animal with tag ${values.tagId} has been added to the local list.`,
+        title: t('animalTracking.toast.addSuccess.title'),
+        description: t('animalTracking.toast.addSuccess.description', { tagId: values.tagId }),
     });
 
     form.reset();
@@ -185,8 +187,8 @@ export default function AnimalsPage() {
     setAnimals(prev => prev.map(a => a.id === editingAnimal.id ? updatedAnimal : a));
 
     toast({
-        title: 'Success!',
-        description: `Animal with tag ${values.tagId} has been updated in the local list.`,
+        title: t('animalTracking.toast.editSuccess.title'),
+        description: t('animalTracking.toast.editSuccess.description', { tagId: values.tagId }),
     });
     setIsEditDialogOpen(false);
     setEditingAnimal(null);
@@ -196,8 +198,8 @@ export default function AnimalsPage() {
   const handleDelete = async (animal: Animal) => {
     setAnimals(prev => prev.filter(a => a.id !== animal.id));
     toast({
-      title: 'Animal record deleted.',
-      description: `The record for tag ${animal.tagId} has been removed from the local list.`,
+      title: t('animalTracking.toast.deleteSuccess.title'),
+      description: t('animalTracking.toast.deleteSuccess.description', { tagId: animal.tagId }),
     });
   }
 
@@ -210,16 +212,16 @@ export default function AnimalsPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline tracking-tight">
-            Animal Tracking
+            {t('animalTracking.title')}
           </h1>
           <p className="text-muted-foreground">
-            Keep records of your livestock's health and status.
+            {t('animalTracking.description')}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
            <Link href="/animals/map" passHref>
             <Button variant="outline" className="w-full">
-              <Map /> View Map
+              <Map /> {t('animalTracking.viewMapButton')}
             </Button>
           </Link>
           <Dialog open={isAddDialogOpen} onOpenChange={(isOpen) => {
@@ -228,14 +230,14 @@ export default function AnimalsPage() {
           }}>
             <DialogTrigger asChild>
               <Button className="w-full">
-                <PlusCircle /> Add Animal
+                <PlusCircle /> {t('animalTracking.addAnimalButton')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Add New Animal Record</DialogTitle>
+                <DialogTitle>{t('animalTracking.addDialog.title')}</DialogTitle>
                 <DialogDescription>
-                  Enter the details for the new animal you want to track.
+                  {t('animalTracking.addDialog.description')}
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -248,9 +250,9 @@ export default function AnimalsPage() {
                     name="tagId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tag ID</FormLabel>
+                        <FormLabel>{t('animalTracking.form.tagId.label')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., ZM-C-003" {...field} />
+                          <Input placeholder={t('animalTracking.form.tagId.placeholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -261,16 +263,16 @@ export default function AnimalsPage() {
                     name="animalType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Animal Type</FormLabel>
+                        <FormLabel>{t('animalTracking.form.animalType.label')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a type" />
+                              <SelectValue placeholder={t('animalTracking.form.animalType.placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {animalTypes.map(type => (
-                               <SelectItem key={type} value={type}>{type}</SelectItem>
+                               <SelectItem key={type} value={type}>{t(`animalTypes.${type.toLowerCase()}`)}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -283,16 +285,16 @@ export default function AnimalsPage() {
                     name="healthStatus"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Health Status</FormLabel>
+                        <FormLabel>{t('animalTracking.form.healthStatus.label')}</FormLabel>
                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a status" />
+                              <SelectValue placeholder={t('animalTracking.form.healthStatus.placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {healthStatuses.map(status => (
-                               <SelectItem key={status} value={status}>{status}</SelectItem>
+                               <SelectItem key={status} value={status}>{t(`animalHealth.${status.replace(' ', '').toLowerCase()}`)}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -305,7 +307,7 @@ export default function AnimalsPage() {
                     name="nextVaccinationDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Next Vaccination Date</FormLabel>
+                        <FormLabel>{t('animalTracking.form.nextVaccinationDate.label')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -318,9 +320,9 @@ export default function AnimalsPage() {
                     name="feedingSchedule"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Feeding Schedule</FormLabel>
+                        <FormLabel>{t('animalTracking.form.feedingSchedule.label')}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="e.g., 'Twice daily with high-protein feed.'" {...field} />
+                          <Textarea placeholder={t('animalTracking.form.feedingSchedule.placeholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -332,7 +334,7 @@ export default function AnimalsPage() {
                       name="locationLatitude"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Latitude</FormLabel>
+                          <FormLabel>{t('animalTracking.form.latitude.label')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="any" placeholder="-15.416" {...field} />
                           </FormControl>
@@ -345,7 +347,7 @@ export default function AnimalsPage() {
                       name="locationLongitude"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Longitude</FormLabel>
+                          <FormLabel>{t('animalTracking.form.longitude.label')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="any" placeholder="28.283" {...field} />
                           </FormControl>
@@ -356,10 +358,10 @@ export default function AnimalsPage() {
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
-                      <Button type="button" variant="secondary">Cancel</Button>
+                      <Button type="button" variant="secondary">{t('common.cancel')}</Button>
                     </DialogClose>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
-                      {form.formState.isSubmitting ? 'Saving...' : 'Save Record'}
+                      {form.formState.isSubmitting ? t('common.saving') : t('common.saveRecord')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -372,15 +374,15 @@ export default function AnimalsPage() {
       <Card>
         <CardHeader>
             <div className="flex items-center justify-between">
-                <CardTitle>Your Livestock</CardTitle>
+                <CardTitle>{t('animalTracking.livestockCard.title')}</CardTitle>
                 <div className="w-48">
                     <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger id="animal-type-filter" aria-label="Select animal type">
-                            <SelectValue placeholder="Filter by type..." />
+                        <SelectTrigger id="animal-type-filter" aria-label={t('animalTracking.livestockCard.filterAriaLabel')}>
+                            <SelectValue placeholder={t('animalTracking.livestockCard.filterPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                             {filterAnimalTypes.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                <SelectItem key={type} value={type}>{type === 'All' ? t('common.all') : t(`animalTypes.${type.toLowerCase()}`)}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -392,11 +394,11 @@ export default function AnimalsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tag ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Health Status</TableHead>
-                  <TableHead>Schedules</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('animalTracking.table.header.tagId')}</TableHead>
+                  <TableHead>{t('animalTracking.table.header.type')}</TableHead>
+                  <TableHead>{t('animalTracking.table.header.healthStatus')}</TableHead>
+                  <TableHead>{t('animalTracking.table.header.schedules')}</TableHead>
+                  <TableHead className="text-right">{t('animalTracking.table.header.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -408,7 +410,7 @@ export default function AnimalsPage() {
                   filteredAnimals.map((animal) => (
                     <TableRow key={animal.id}>
                       <TableCell className="font-medium">{animal.tagId}</TableCell>
-                      <TableCell>{animal.animalType}</TableCell>
+                      <TableCell>{t(`animalTypes.${animal.animalType.toLowerCase()}`)}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -420,7 +422,7 @@ export default function AnimalsPage() {
                           }
                           className={animal.healthStatus === 'Healthy' ? 'bg-primary/20 text-primary-foreground border-primary/50' : ''}
                         >
-                          {animal.healthStatus}
+                          {t(`animalHealth.${animal.healthStatus.replace(' ', '').toLowerCase()}`)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -428,13 +430,13 @@ export default function AnimalsPage() {
                           {animal.feedingSchedule && (
                             <Badge variant="outline" className="text-xs w-fit">
                               <Clock className="mr-1 h-3 w-3" />
-                              Feed: {animal.feedingSchedule}
+                              {t('animalTracking.table.feed')}: {animal.feedingSchedule}
                             </Badge>
                           )}
                           {animal.nextVaccinationDate && (
                             <Badge variant="outline" className="text-xs w-fit">
                               <CalendarCheck className="mr-1 h-3 w-3" />
-                              Vax: {format(animal.nextVaccinationDate, 'PPP')}
+                              {t('animalTracking.table.vax')}: {format(animal.nextVaccinationDate, 'PPP')}
                             </Badge>
                           )}
                         </div>
@@ -442,25 +444,25 @@ export default function AnimalsPage() {
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleEditOpen(animal)}>
                             <Pencil />
-                            <span className="sr-only">Edit Animal</span>
+                            <span className="sr-only">{t('animalTracking.table.editSr')}</span>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
                               <Trash2 className="text-destructive" />
-                              <span className="sr-only">Delete Animal</span>
+                              <span className="sr-only">{t('animalTracking.table.deleteSr')}</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogTitle>{t('common.areYouSure')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the animal record for tag {animal.tagId}.
+                                {t('animalTracking.deleteDialog.description', {tagId: animal.tagId})}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(animal)}>Delete</AlertDialogAction>
+                              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(animal)}>{t('common.delete')}</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -470,7 +472,7 @@ export default function AnimalsPage() {
                 ) : (
                   <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">
-                          No animals of this type found.
+                          {t('animalTracking.table.noAnimalsFound')}
                       </TableCell>
                   </TableRow>
                 )}
@@ -488,9 +490,9 @@ export default function AnimalsPage() {
         }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Animal Record</DialogTitle>
+            <DialogTitle>{t('animalTracking.editDialog.title')}</DialogTitle>
             <DialogDescription>
-              Update the details for the selected animal.
+              {t('animalTracking.editDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -503,9 +505,9 @@ export default function AnimalsPage() {
                 name="tagId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tag ID</FormLabel>
+                    <FormLabel>{t('animalTracking.form.tagId.label')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ZM-C-003" {...field} />
+                      <Input placeholder={t('animalTracking.form.tagId.placeholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -516,16 +518,16 @@ export default function AnimalsPage() {
                 name="animalType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Animal Type</FormLabel>
+                    <FormLabel>{t('animalTracking.form.animalType.label')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a type" />
+                          <SelectValue placeholder={t('animalTracking.form.animalType.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {animalTypes.map(type => (
-                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                           <SelectItem key={type} value={type}>{t(`animalTypes.${type.toLowerCase()}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -538,16 +540,16 @@ export default function AnimalsPage() {
                 name="healthStatus"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Health Status</FormLabel>
+                    <FormLabel>{t('animalTracking.form.healthStatus.label')}</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
+                          <SelectValue placeholder={t('animalTracking.form.healthStatus.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {healthStatuses.map(status => (
-                           <SelectItem key={status} value={status}>{status}</SelectItem>
+                           <SelectItem key={status} value={status}>{t(`animalHealth.${status.replace(' ', '').toLowerCase()}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -560,7 +562,7 @@ export default function AnimalsPage() {
                 name="nextVaccinationDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Next Vaccination Date</FormLabel>
+                    <FormLabel>{t('animalTracking.form.nextVaccinationDate.label')}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -573,9 +575,9 @@ export default function AnimalsPage() {
                   name="feedingSchedule"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Feeding Schedule</FormLabel>
+                      <FormLabel>{t('animalTracking.form.feedingSchedule.label')}</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="e.g., 'Twice daily with high-protein feed.'" {...field} />
+                        <Textarea placeholder={t('animalTracking.form.feedingSchedule.placeholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -587,7 +589,7 @@ export default function AnimalsPage() {
                       name="locationLatitude"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Latitude</FormLabel>
+                          <FormLabel>{t('animalTracking.form.latitude.label')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="any" placeholder="-15.416" {...field} />
                           </FormControl>
@@ -600,7 +602,7 @@ export default function AnimalsPage() {
                       name="locationLongitude"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Longitude</FormLabel>
+                          <FormLabel>{t('animalTracking.form.longitude.label')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="any" placeholder="28.283" {...field} />
                           </FormControl>
@@ -611,10 +613,10 @@ export default function AnimalsPage() {
                   </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>Cancel</Button>
+                  <Button type="button" variant="secondary" onClick={() => { setIsEditDialogOpen(false); setEditingAnimal(null); form.reset(); }}>{t('common.cancel')}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                  {form.formState.isSubmitting ? t('common.saving') : t('common.saveChanges')}
                 </Button>
               </DialogFooter>
             </form>
@@ -624,5 +626,3 @@ export default function AnimalsPage() {
     </div>
   );
 }
-
-    

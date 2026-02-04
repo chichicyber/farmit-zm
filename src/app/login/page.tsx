@@ -28,7 +28,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Logo } from '@/components/logo';
 import Image from 'next/image';
-import {PlaceHolderImages} from '@/lib/placeholder-images';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useLanguage } from '@/contexts/language-context';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -36,6 +37,7 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
@@ -54,8 +56,8 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
-        description: 'User not found or password incorrect. Please sign up if you are a new user.',
+        title: t('login.toast.loginFailed.title'),
+        description: t('login.toast.loginFailed.description'),
       });
     }
   };
@@ -78,9 +80,9 @@ export default function LoginPage() {
           <div className="mx-auto mb-4">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-bold font-headline">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold font-headline">{t('login.title')}</CardTitle>
           <CardDescription>
-            Enter your credentials to access your farm dashboard.
+            {t('login.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,7 +93,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('login.emailLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="farmer@farmit.com"
@@ -108,7 +110,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('login.passwordLabel')}</FormLabel>
                     <FormControl>
                       <Input placeholder="••••••••" {...field} type="password" />
                     </FormControl>
@@ -117,19 +119,19 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
+                {form.formState.isSubmitting ? t('login.signingInButton') : t('login.signInButton')}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex-col gap-4">
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('login.noAccount')}{' '}
             <Link
               href="/signup"
               className="font-semibold text-primary underline-offset-4 hover:underline"
             >
-              Sign up
+              {t('login.signUpLink')}
             </Link>
           </p>
         </CardFooter>

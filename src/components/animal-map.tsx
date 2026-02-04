@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dummyAnimals } from '@/lib/dummy-data';
+import { useLanguage } from '@/contexts/language-context';
 
 type Animal = {
   id: string;
@@ -51,6 +52,7 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
 }
 
 export default function AnimalMap() {
+    const { t } = useLanguage();
     const animals = dummyAnimals;
     const isLoading = false; // Data is loaded locally
 
@@ -118,7 +120,7 @@ export default function AnimalMap() {
           <div className="md:col-span-2">
             <Card className="h-[70vh]">
               <CardContent className="p-0 h-full rounded-lg overflow-hidden flex items-center justify-center bg-muted">
-                <p className="text-muted-foreground">No animals with location data found.</p>
+                <p className="text-muted-foreground">{t('animalMap.noData')}</p>
               </CardContent>
             </Card>
           </div>
@@ -162,10 +164,10 @@ export default function AnimalMap() {
                               onClose={() => setSelectedAnimal(null)}
                           >
                               <div className="space-y-1 p-1">
-                                  <h3 className="font-bold">Tag ID: {selectedAnimal.tagId}</h3>
-                                  <p>Type: {selectedAnimal.type}</p>
+                                  <h3 className="font-bold">{t('animalMap.popup.tagId')}: {selectedAnimal.tagId}</h3>
+                                  <p>{t('animalMap.popup.type')}: {t(`animalTypes.${selectedAnimal.type.toLowerCase()}`)}</p>
                                   {isOutsideGeofence(selectedAnimal.position, selectedField) &&
-                                      <Badge variant="destructive">Outside Geofence</Badge>
+                                      <Badge variant="destructive">{t('animalMap.popup.outOfBounds')}</Badge>
                                   }
                               </div>
                           </Popup>
@@ -180,9 +182,9 @@ export default function AnimalMap() {
   return (
     <div className="flex flex-col gap-6">
        <div>
-        <h1 className="text-3xl font-bold font-headline tracking-tight">Animal Map View</h1>
+        <h1 className="text-3xl font-bold font-headline tracking-tight">{t('animalMap.title')}</h1>
         <p className="text-muted-foreground">
-            Monitor your livestock locations across different fields using OpenStreetMap.
+            {t('animalMap.description')}
         </p>
       </div>
 
@@ -190,15 +192,15 @@ export default function AnimalMap() {
             <div className="md:col-span-1 flex flex-col gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Map Controls</CardTitle>
-                        <CardDescription>Select a field to view.</CardDescription>
+                        <CardTitle>{t('animalMap.controls.title')}</CardTitle>
+                        <CardDescription>{t('animalMap.controls.description')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                           <Label htmlFor="field-select">Field to View</Label>
+                           <Label htmlFor="field-select">{t('animalMap.controls.fieldLabel')}</Label>
                             <Select onValueChange={handleFieldChange} defaultValue={selectedField.name}>
                                 <SelectTrigger id="field-select">
-                                    <SelectValue placeholder="Select a field" />
+                                    <SelectValue placeholder={t('animalMap.controls.fieldPlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {fields.map(field => (
@@ -217,5 +219,3 @@ export default function AnimalMap() {
     </div>
   );
 }
-
-    

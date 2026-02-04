@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLanguage } from '@/contexts/language-context';
 
 const formSchema = z.object({
   firstName: z.string().min(1, { message: 'First name is required.' }),
@@ -51,6 +52,7 @@ const formSchema = z.object({
 const userRoles = ['farmer', 'student', 'user'];
 
 export default function SignupPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
@@ -85,20 +87,20 @@ export default function SignupPage() {
       });
 
       toast({
-        title: 'Account Created',
-        description: "You've been successfully signed up! Redirecting...",
+        title: t('signup.toast.success.title'),
+        description: t('signup.toast.success.description'),
       });
       router.push('/dashboard');
     } catch (error: any) {
-      let description = 'An unexpected error occurred.';
+      let description = t('signup.toast.failure.unknownError');
       if (error.code === 'auth/email-already-in-use') {
-        description = 'This email is already in use. Please try signing in.';
+        description = t('signup.toast.failure.emailInUse');
       } else if (error.message) {
         description = error.message;
       }
       toast({
         variant: 'destructive',
-        title: 'Sign Up Failed',
+        title: t('signup.toast.failure.title'),
         description: description,
       });
     }
@@ -125,10 +127,10 @@ export default function SignupPage() {
             <Logo />
           </div>
           <CardTitle className="text-2xl font-bold font-headline">
-            Create an Account
+            {t('signup.title')}
           </CardTitle>
           <CardDescription>
-            Join our community of modern farmers in Zambia.
+            {t('signup.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,9 +142,9 @@ export default function SignupPage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>{t('signup.firstNameLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input placeholder={t('signup.firstNamePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -153,9 +155,9 @@ export default function SignupPage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>{t('signup.lastNameLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Banda" {...field} />
+                        <Input placeholder={t('signup.lastNamePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -167,7 +169,7 @@ export default function SignupPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('signup.emailLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="farmer@farmit.com"
@@ -184,7 +186,7 @@ export default function SignupPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('signup.passwordLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -201,14 +203,14 @@ export default function SignupPage() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>I am a...</FormLabel>
+                    <FormLabel>{t('signup.roleLabel')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your role" />
+                          <SelectValue placeholder={t('signup.rolePlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -218,7 +220,7 @@ export default function SignupPage() {
                             value={role}
                             className="capitalize"
                           >
-                            {role}
+                            {t(`roles.${role}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -233,20 +235,20 @@ export default function SignupPage() {
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting
-                  ? 'Creating Account...'
-                  : 'Sign Up'}
+                  ? t('signup.creatingAccountButton')
+                  : t('signup.signUpButton')}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex-col">
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
+            {t('signup.alreadyHaveAccount')}{' '}
             <Link
               href="/login"
               className="font-semibold text-primary underline-offset-4 hover:underline"
             >
-              Sign in
+              {t('signup.signInLink')}
             </Link>
           </p>
         </CardFooter>

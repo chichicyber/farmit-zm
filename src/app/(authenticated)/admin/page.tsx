@@ -63,6 +63,7 @@ import { useToast } from '@/hooks/use-toast';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
+import { useLanguage } from '@/contexts/language-context';
 
 type UserProfile = {
   id: string;
@@ -90,6 +91,7 @@ const userRoles = ['farmer', 'student', 'user', 'admin'];
 const filterRoles = ['All', ...userRoles];
 
 export default function AdminPage() {
+  const { t } = useLanguage();
   const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
@@ -141,8 +143,10 @@ export default function AdminPage() {
         });
 
         toast({
-          title: 'User Created',
-          description: `Successfully created account for ${values.email}.`,
+          title: t('admin.userCreatedToast.title'),
+          description: t('admin.userCreatedToast.description', {
+            email: values.email,
+          }),
         });
         addUserForm.reset();
         setIsAddUserDialogOpen(false);
@@ -153,11 +157,11 @@ export default function AdminPage() {
       console.error('Error creating user:', error);
       toast({
         variant: 'destructive',
-        title: 'Error Creating User',
+        title: t('admin.userCreateErrorToast.title'),
         description:
           error.code === 'auth/email-already-in-use'
-            ? 'This email address is already in use.'
-            : error.message || 'An unknown error occurred.',
+            ? t('admin.userCreateErrorToast.emailInUse')
+            : error.message || t('admin.userCreateErrorToast.unknownError'),
       });
     }
   };
@@ -215,24 +219,23 @@ export default function AdminPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
-            <Shield className="h-8 w-8 text-primary" /> User Management
+            <Shield className="h-8 w-8 text-primary" />{' '}
+            {t('admin.title')}
           </h1>
-          <p className="text-muted-foreground">
-            View, create, and manage all users in the system.
-          </p>
+          <p className="text-muted-foreground">{t('admin.description')}</p>
         </div>
 
         <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle /> Add New User
+              <PlusCircle /> {t('admin.addNewUserButton')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>{t('admin.addUserDialog.title')}</DialogTitle>
               <DialogDescription>
-                Create a new user account and assign a role.
+                {t('admin.addUserDialog.description')}
               </DialogDescription>
             </DialogHeader>
             <Form {...addUserForm}>
@@ -246,9 +249,14 @@ export default function AdminPage() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name</FormLabel>
+                        <FormLabel>{t('admin.addUserDialog.firstNameLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="John" {...field} />
+                          <Input
+                            placeholder={t(
+                              'admin.addUserDialog.firstNamePlaceholder'
+                            )}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -259,9 +267,14 @@ export default function AdminPage() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>{t('admin.addUserDialog.lastNameLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Banda" {...field} />
+                          <Input
+                            placeholder={t(
+                              'admin.addUserDialog.lastNamePlaceholder'
+                            )}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,11 +286,13 @@ export default function AdminPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('admin.addUserDialog.emailLabel')}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="farmer@farmit.com"
+                          placeholder={t(
+                            'admin.addUserDialog.emailPlaceholder'
+                          )}
                           {...field}
                         />
                       </FormControl>
@@ -290,9 +305,13 @@ export default function AdminPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t('admin.addUserDialog.passwordLabel')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -303,14 +322,18 @@ export default function AdminPage() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
+                      <FormLabel>{t('admin.addUserDialog.roleLabel')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
+                            <SelectValue
+                              placeholder={t(
+                                'admin.addUserDialog.rolePlaceholder'
+                              )}
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -320,7 +343,7 @@ export default function AdminPage() {
                               value={role}
                               className="capitalize"
                             >
-                              {role}
+                              {t(`roles.${role}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -332,7 +355,7 @@ export default function AdminPage() {
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="secondary">
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </DialogClose>
                   <Button
@@ -340,8 +363,8 @@ export default function AdminPage() {
                     disabled={addUserForm.formState.isSubmitting}
                   >
                     {addUserForm.formState.isSubmitting
-                      ? 'Creating...'
-                      : 'Create User'}
+                      ? t('admin.addUserDialog.creatingButton')
+                      : t('admin.addUserDialog.createUserButton')}
                   </Button>
                 </DialogFooter>
               </form>
@@ -354,16 +377,16 @@ export default function AdminPage() {
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>All Users</CardTitle>
+              <CardTitle>{t('admin.allUsersCard.title')}</CardTitle>
               <CardDescription>
-                A list of all users who have registered on the platform.
+                {t('admin.allUsersCard.description')}
               </CardDescription>
             </div>
             <div className="flex gap-2">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t('admin.allUsersCard.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -371,7 +394,9 @@ export default function AdminPage() {
               </div>
               <Select value={filterRole} onValueChange={setFilterRole}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by role..." />
+                  <SelectValue
+                    placeholder={t('admin.allUsersCard.filterPlaceholder')}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {filterRoles.map((role) => (
@@ -380,7 +405,7 @@ export default function AdminPage() {
                       value={role}
                       className="capitalize"
                     >
-                      {role}
+                      {role === 'All' ? t('common.all') : t(`roles.${role}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -393,10 +418,12 @@ export default function AdminPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.usersTable.nameHeader')}</TableHead>
+                  <TableHead>{t('admin.usersTable.emailHeader')}</TableHead>
+                  <TableHead>{t('admin.usersTable.roleHeader')}</TableHead>
+                  <TableHead className="text-right">
+                    {t('admin.usersTable.actionsHeader')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -434,13 +461,13 @@ export default function AdminPage() {
                             }
                             className="capitalize"
                           >
-                            {displayRole}
+                            {t(`roles.${displayRole}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="outline" size="sm" asChild>
                             <Link href={`/admin/users/${user.id}`}>
-                              View Account
+                              {t('admin.usersTable.viewAccountButton')}
                             </Link>
                           </Button>
                           <Button
@@ -448,7 +475,7 @@ export default function AdminPage() {
                             size="sm"
                             className="ml-2"
                           >
-                            Edit
+                            {t('admin.usersTable.editButton')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -457,7 +484,7 @@ export default function AdminPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                      No users found.
+                      {t('admin.usersTable.noUsersFound')}
                     </TableCell>
                   </TableRow>
                 )}
