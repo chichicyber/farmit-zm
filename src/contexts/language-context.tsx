@@ -57,8 +57,11 @@ const getTranslation = (
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  // Initialize with 'en' to ensure server and initial client render are consistent.
   const [language, setLanguageState] = useState<LanguageCode>('en');
 
+  // After mounting on the client, check localStorage and update the state.
+  // This will trigger a re-render with the user's preferred language.
   useEffect(() => {
     const storedLang = localStorage.getItem('farmit-lang');
     if (storedLang && languages[storedLang as LanguageCode]) {
@@ -81,17 +84,21 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
       let translatedText = getTranslation(currentTranslations, key);
 
+      // Fallback to English if the key is not found in the current language
       if (translatedText === undefined) {
         translatedText = getTranslation(defaultTranslations, key);
       }
 
+      // If still not found, warn and return the key itself
       if (translatedText === undefined) {
-        console.warn(
-          `Translation key not found in '${language}' or 'en': ${key}`
-        );
+        // This warning is helpful during development
+        // console.warn(
+        //   `Translation key not found in '${language}' or 'en': ${key}`
+        // );
         return key;
       }
-
+      
+      // Interpolate options if they are provided
       if (options && typeof translatedText === 'string') {
         return Object.entries(options).reduce((acc, [optKey, optValue]) => {
           return acc.replace(`{${optKey}}`, String(optValue));
@@ -100,7 +107,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
       return translatedText;
     },
-    [language]
+    [language] // The `t` function now correctly depends only on the language state
   );
 
   const value = useMemo(
