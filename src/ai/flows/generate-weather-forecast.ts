@@ -4,7 +4,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GEMINI_MODEL } from '../model';
 
-export const WeatherForecastSchema = z.object({
+const WeatherForecastSchema = z.object({
   day: z.string(),
   description: z.string(),
   temp: z.string(),
