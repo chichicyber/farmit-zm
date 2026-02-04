@@ -130,7 +130,7 @@ export default function UserStatisticsPage({
       fill: 'hsl(var(--primary))',
     },
     {
-      status: t('animalHealth.observation'),
+      status: t('animalHealth.underobservation'),
       count: animalHealthStats.observation,
       fill: 'hsl(var(--accent))',
     },
@@ -368,3 +368,5 @@ function StatCard({
     </Card>
   );
 }
+
+    

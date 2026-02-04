@@ -19,7 +19,7 @@ interface LanguageContextType {
   t: (key: string, options?: { [key: string]: string | number } | undefined) => string;
 }
 
-// Available languages
+// Available languages moved outside component
 export const languages = {
   en: 'English',
   bem: 'Bemba',
@@ -28,6 +28,7 @@ export const languages = {
 };
 export type LanguageCode = keyof typeof languages;
 
+// Translation data moved outside component
 const allTranslations: Record<LanguageCode, Translations> = {
   en: enTranslations,
   bem: bemTranslations,
@@ -49,7 +50,6 @@ const getTranslation = (translations: Translations, key: string): string | undef
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
 
-  // On mount, determine the initial language from localStorage or default to 'en'
   useEffect(() => {
     const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
     if (storedLang && languages[storedLang]) {
@@ -57,7 +57,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Function to change the language
   const setLanguage = useCallback((lang: string) => {
     if (languages[lang as LanguageCode]) {
       const newLang = lang as LanguageCode;
@@ -66,25 +65,21 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // The translation function, memoized to update only when the language changes
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
-    const currentTranslations = allTranslations[language];
-    const defaultTranslations = allTranslations['en'];
+    const currentTranslations = allTranslations[language] || allTranslations.en;
+    const defaultTranslations = allTranslations.en;
 
     let translatedText = getTranslation(currentTranslations, key);
     
-    // Fallback to English if translation is not found
     if (translatedText === undefined) {
       translatedText = getTranslation(defaultTranslations, key);
     }
 
-    // If still not found, return the key and log a warning
     if (translatedText === undefined) {
         console.warn(`Translation key not found: ${key}`);
         return key;
     }
 
-    // Replace placeholders like {name}
     if (options && typeof translatedText === 'string') {
       return Object.entries(options).reduce((acc, [optKey, optValue]) => {
         return acc.replace(`{${optKey}}`, String(optValue));
@@ -92,9 +87,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return translatedText as string;
-  }, [language]); // This function now only depends on the current language state
+  }, [language]);
 
-  // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     language,
     setLanguage,
@@ -115,3 +109,5 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+    

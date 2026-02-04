@@ -67,7 +67,7 @@ export function UserNav() {
             <p className="text-sm font-medium leading-none">
               {userProfile
                 ? `${userProfile.firstName} ${userProfile.lastName}`
-                : user?.displayName ?? 'User'}
+                : user?.displayName ?? t('roles.user')}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
@@ -90,3 +90,5 @@ export function UserNav() {
     </DropdownMenu>
   );
 }
+
+    
