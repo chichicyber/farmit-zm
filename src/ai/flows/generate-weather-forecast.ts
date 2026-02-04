@@ -17,7 +17,7 @@ export async function generateWeatherForecast(
   }
 
   const url =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview:generateContent';
 
   const prompt = `You are a weather forecasting service. Based on the location (Latitude: ${lat}, Longitude: ${lon}), which is in Lusaka, Zambia, provide a realistic 3-day weather forecast.
   

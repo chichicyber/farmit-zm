@@ -1,12 +1,20 @@
 "use server";
 
-export async function generateRecommendation(prompt: string) {
+export async function generateSmartInsight(userQuestion: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview:generateContent`;
+
+  const prompt = `You are Farmit Smart, an expert agricultural advisor for farmers in Zambia. A user has a question. Provide a clear, concise, and actionable answer based on agronomic best practices relevant to the region.
+
+Format your response using markdown.
+
+User Question: "${userQuestion}"
+
+Your Answer:`;
 
   try {
     const response = await fetch(url, {
@@ -23,7 +31,7 @@ export async function generateRecommendation(prompt: string) {
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 1024,
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
@@ -46,12 +54,12 @@ export async function generateRecommendation(prompt: string) {
 
     if (!text) {
       console.error("No text found in API response:", data);
-      throw new Error("Failed to extract recommendation from API response.");
+      throw new Error("Failed to extract insight from API response.");
     }
     
     return text;
   } catch (error: any) {
-    console.error("Error in generateRecommendation flow:", error);
+    console.error("Error in generateSmartInsight flow:", error);
     throw error;
   }
 }

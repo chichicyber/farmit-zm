@@ -9,7 +9,7 @@ export async function diagnoseFarmIssue(formData: FormData) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview:generateContent";
 
   // --- Extract data from FormData ---
   const question = formData.get('question') as string;
