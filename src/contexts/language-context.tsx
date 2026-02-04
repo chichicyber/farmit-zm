@@ -48,16 +48,33 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 // ---
 
 /**
- * Correctly retrieves a translation from a flat JSON object using a key.
- * @param translations The translation object (e.g., en.json).
- * @param key The key to look up (e.g., "app.name").
+ * Retrieves a translation string from a translations object.
+ * It can handle both nested keys (e.g., "languages.en") and flat keys with dots (e.g., "app.name").
+ * @param translations The translation object.
+ * @param key The key to look up.
  * @returns The translated string or undefined if not found.
  */
 const getTranslation = (
   translations: any,
   key: string
 ): string | undefined => {
-  return translations[key];
+  // First, try to resolve as a nested key (e.g., 'languages.en')
+  const nestedValue = key.split('.').reduce((obj, keyPart) => {
+    return obj && typeof obj === 'object' && obj.hasOwnProperty(keyPart)
+      ? obj[keyPart]
+      : undefined;
+  }, translations);
+
+  if (typeof nestedValue === 'string') {
+    return nestedValue;
+  }
+
+  // If nested fails, try to resolve as a single flat key (e.g., 'app.name')
+  if (translations && typeof translations[key] === 'string') {
+    return translations[key];
+  }
+
+  return undefined;
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
@@ -98,7 +115,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         // console.warn(`Translation key "${key}" not found.`);
         return key;
       }
-      
+
       // Interpolate options if they are provided
       if (options && typeof translatedText === 'string') {
         return Object.entries(options).reduce((acc, [optKey, optValue]) => {
@@ -108,7 +125,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
       return translatedText;
     },
-    [language] 
+    [language]
   );
 
   const value = useMemo(
