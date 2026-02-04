@@ -149,18 +149,30 @@ export default function FarmDoctorPage() {
     }
   };
 
+  const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setDiagnosis('');
 
     try {
-      const formData = new FormData();
-      formData.append('question', values.question);
+      let imageDataUri: string | undefined = undefined;
       if (processedImage) {
-        formData.append('image', processedImage, 'diagnosis.jpg');
+        imageDataUri = await blobToDataUrl(processedImage);
       }
+      
+      const result = await diagnoseFarmIssue({
+        question: values.question,
+        image: imageDataUri,
+      });
 
-      const result = await diagnoseFarmIssue(formData);
       setDiagnosis(result);
 
       if (user && firestore && result) {

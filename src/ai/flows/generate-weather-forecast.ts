@@ -1,25 +1,25 @@
 'use server';
 
-export type WeatherForecast = {
-  day: string;
-  description: string;
-  temp: string;
-  condition: 'sunny' | 'cloudy' | 'rainy' | 'partly-cloudy';
-};
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
 
-export async function generateWeatherForecast(
-  lat: number,
-  lon: number
-): Promise<WeatherForecast[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is not set.');
-  }
+export const WeatherForecastSchema = z.object({
+  day: z.string(),
+  description: z.string(),
+  temp: z.string(),
+  condition: z.enum(['sunny', 'cloudy', 'rainy', 'partly-cloudy']),
+});
 
-  const url =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview:generateContent';
+export type WeatherForecast = z.infer<typeof WeatherForecastSchema>;
 
-  const prompt = `You are a weather forecasting service. Based on the location (Latitude: ${lat}, Longitude: ${lon}), which is in Lusaka, Zambia, provide a realistic 3-day weather forecast.
+const weatherFlow = ai.defineFlow(
+  {
+    name: 'weatherFlow',
+    inputSchema: z.object({ lat: z.number(), lon: z.number() }),
+    outputSchema: z.array(WeatherForecastSchema),
+  },
+  async ({ lat, lon }) => {
+    const prompt = `You are a weather forecasting service. Based on the location (Latitude: ${lat}, Longitude: ${lon}), which is in Lusaka, Zambia, provide a realistic 3-day weather forecast.
   
   The first day should be "Today", the second "Tomorrow", and the third "Next Day".
   
@@ -35,41 +35,26 @@ export async function generateWeatherForecast(
   ]
   `;
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+    const llmResponse = await ai.generate({
+      model: 'googleai/gemini-1.5-flash-latest',
+      prompt: prompt,
+      config: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
       },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          temperature: 0.2,
-        },
-      }),
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      console.error('Gemini API error for weather:', errorBody);
-      throw new Error(
-        `API error ${response.status}: ${errorBody.error?.message}`
-      );
-    }
+    return llmResponse.output() as WeatherForecast[];
+  }
+);
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      console.error('No text in weather response:', data);
-      throw new Error('Failed to get weather forecast from AI.');
-    }
-
-    // The response should be a JSON string, so we parse it.
-    return JSON.parse(text) as WeatherForecast[];
-  } catch (error: any) {
+export async function generateWeatherForecast(
+  lat: number,
+  lon: number
+): Promise<WeatherForecast[]> {
+  try {
+    return await weatherFlow({ lat, lon });
+  } catch (error) {
     console.error('Weather Forecast Error:', error);
     // Return a default forecast on error to prevent UI crash
     return [

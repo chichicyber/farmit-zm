@@ -1,57 +1,34 @@
-"use server";
+'use server';
 
-export async function generateRecommendation(prompt: string) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not set.");
-  }
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview:generateContent`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+const recommendationFlow = ai.defineFlow(
+  {
+    name: 'recommendationFlow',
+    inputSchema: z.string(),
+    outputSchema: z.string(),
+  },
+  async (prompt) => {
+    const llmResponse = await ai.generate({
+      model: 'googleai/gemini-1.5-flash-latest',
+      prompt: prompt,
+      config: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-        },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        ],
-      }),
+      safetySettings: [
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      ],
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      console.error("Google AI API Error:", errorBody);
-      const errorMessage = errorBody.error?.message || 'Unknown API error';
-      throw new Error(`API request failed with status ${response.status}: ${errorMessage}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      console.error("No text found in API response:", data);
-      throw new Error("Failed to extract recommendation from API response.");
-    }
-    
-    return text;
-  } catch (error: any) {
-    console.error("Error in generateRecommendation flow:", error);
-    throw error;
+    return llmResponse.text;
   }
+);
+
+export async function generateRecommendation(prompt: string): Promise<string> {
+  return await recommendationFlow(prompt);
 }
