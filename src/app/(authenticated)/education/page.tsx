@@ -90,6 +90,63 @@ export default function FarmitSmartPage() {
         </h1>
         <p className="h-5 text-muted-foreground">{welcomeText}</p>
       </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Ask Farmit Smart</CardTitle>
+          <CardDescription>
+            Have a question? Get instant advice from our AI-powered farming expert.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="question"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Question</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., 'What is the best way to control weeds in a maize field?'"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Getting Insights...' : 'Get Insights'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        {(isLoading || insight) && (
+          <CardContent>
+            <div className="mt-4 rounded-lg border bg-card p-4">
+              <h4 className="flex items-center gap-2 font-semibold">
+                 <Sparkles className="h-5 w-5 text-accent" />
+                 AI Insight
+              </h4>
+              <div className="mt-2 text-sm text-muted-foreground">
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none text-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
+                </div>
+              )}
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
@@ -160,63 +217,6 @@ export default function FarmitSmartPage() {
             </CardDescription>
         </CardContent>
        </Card>
-       
-      <Card>
-        <CardHeader>
-          <CardTitle>Ask Farmit Smart</CardTitle>
-          <CardDescription>
-            Have a question? Get instant advice from our AI-powered farming expert.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="question"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Question</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g., 'What is the best way to control weeds in a maize field?'"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Getting Insights...' : 'Get Insights'}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-        {(isLoading || insight) && (
-          <CardContent>
-            <div className="mt-4 rounded-lg border bg-card p-4">
-              <h4 className="flex items-center gap-2 font-semibold">
-                 <Sparkles className="h-5 w-5 text-accent" />
-                 AI Insight
-              </h4>
-              <div className="mt-2 text-sm text-muted-foreground">
-              {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none text-foreground">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
-                </div>
-              )}
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
 
     </div>
   );
