@@ -52,9 +52,10 @@ export default function FarmitSmartPage() {
   useEffect(() => {
     let i = 0;
     const welcomeMessage = t('farmitSmart.welcome');
+    setWelcomeText(''); // Reset before starting
     const typingInterval = setInterval(() => {
       if (i < welcomeMessage.length) {
-        setWelcomeText(welcomeMessage.substring(0, i + 1));
+        setWelcomeText(prev => prev + welcomeMessage.charAt(i));
         i++;
       } else {
         clearInterval(typingInterval);
@@ -63,6 +64,7 @@ export default function FarmitSmartPage() {
 
     return () => clearInterval(typingInterval);
   }, [t]);
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);

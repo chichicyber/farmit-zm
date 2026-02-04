@@ -1,25 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// Import translation files statically
 import enTranslations from '@/locales/en.json';
 import bemTranslations from '@/locales/bem.json';
 import toiTranslations from '@/locales/toi.json';
 import lozTranslations from '@/locales/loz.json';
 
-// Define language data structure
-interface Translations {
-  [key: string]: string | Translations;
-}
-
-// Define context value shape
-interface LanguageContextType {
-  language: string;
-  setLanguage: (lang: string) => void;
-  t: (key: string, options?: { [key: string]: string | number } | undefined) => string;
-}
-
-// Available languages moved outside component
+// --- Module-level constants ---
 export const languages = {
   en: 'English',
   bem: 'Bemba',
@@ -28,73 +17,91 @@ export const languages = {
 };
 export type LanguageCode = keyof typeof languages;
 
-// Translation data moved outside component
-const allTranslations: Record<LanguageCode, Translations> = {
+const allTranslations: Record<string, any> = {
   en: enTranslations,
   bem: bemTranslations,
   toi: toiTranslations,
   loz: lozTranslations,
 };
+// ---
+
+// --- Context Definition ---
+interface LanguageContextType {
+  language: LanguageCode;
+  setLanguage: (lang: string) => void;
+  t: (key: string, options?: { [key: string]: string | number }) => string;
+}
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+// ---
 
-const getTranslation = (translations: Translations, key: string): string | undefined => {
-    return key.split('.').reduce((obj, k) => {
-        if (obj && typeof obj === 'object' && k in obj) {
-        return obj[k as keyof typeof obj] as string | Translations;
-        }
-        return undefined;
-    }, translations) as string | undefined;
+// --- Helper Function ---
+const getTranslation = (translations: any, key: string): string | undefined => {
+  // Navigate through the nested object based on the key (e.g., "dashboard.title")
+  return key.split('.').reduce((obj, k) => {
+    if (obj && typeof obj === 'object' && k in obj) {
+      return obj[k];
+    }
+    return undefined;
+  }, translations);
 };
+// ---
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
 
+  // On initial client-side render, load the language preference from localStorage
   useEffect(() => {
-    const storedLang = localStorage.getItem('farmit-lang') as LanguageCode;
-    if (storedLang && languages[storedLang]) {
-      setLanguageState(storedLang);
+    const storedLang = localStorage.getItem('farmit-lang');
+    if (storedLang && languages[storedLang as LanguageCode]) {
+      setLanguageState(storedLang as LanguageCode);
     }
   }, []);
 
-  const setLanguage = useCallback((lang: string) => {
-    if (languages[lang as LanguageCode]) {
+  // Function to change the language, which updates state and saves to localStorage
+  const setLanguage = (lang: string) => {
+    if (lang && languages[lang as LanguageCode]) {
       const newLang = lang as LanguageCode;
       localStorage.setItem('farmit-lang', newLang);
       setLanguageState(newLang);
     }
-  }, []);
+  };
 
-  const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
+  // The core translation function `t`
+  const t = (key: string, options?: { [key: string]: string | number }): string => {
     const currentTranslations = allTranslations[language] || allTranslations.en;
     const defaultTranslations = allTranslations.en;
 
     let translatedText = getTranslation(currentTranslations, key);
-    
+
+    // If the key is not found in the current language, fall back to English
     if (translatedText === undefined) {
       translatedText = getTranslation(defaultTranslations, key);
     }
 
+    // If still not found, warn and return the key itself
     if (translatedText === undefined) {
-        console.warn(`Translation key not found: ${key}`);
-        return key;
+      console.warn(`Translation key not found in '${language}' or 'en': ${key}`);
+      return key;
     }
 
+    // Replace placeholders like {name} with values from the options object
     if (options && typeof translatedText === 'string') {
       return Object.entries(options).reduce((acc, [optKey, optValue]) => {
         return acc.replace(`{${optKey}}`, String(optValue));
       }, translatedText);
     }
 
-    return translatedText as string;
-  }, [language]);
+    return translatedText;
+  };
 
-  const value = useMemo(() => ({
+  // The value provided to all consumer components of this context
+  const value = {
     language,
     setLanguage,
     t,
-  }), [language, setLanguage, t]);
-  
+  };
+
   return (
     <LanguageContext.Provider value={value}>
       {children}
@@ -102,6 +109,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Custom hook to easily access the language context
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
@@ -109,5 +117,3 @@ export const useLanguage = () => {
   }
   return context;
 };
-
-    

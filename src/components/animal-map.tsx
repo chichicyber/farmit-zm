@@ -218,5 +218,3 @@ export default function AnimalMap() {
     </div>
   );
 }
-
-    
