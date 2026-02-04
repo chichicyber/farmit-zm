@@ -38,10 +38,8 @@ import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState, useEffect } from 'react';
 import { format, addMonths } from 'date-fns';
-import {
-  generateWeatherForecast,
-  type WeatherForecast,
-} from '@/ai/flows/generate-weather-forecast';
+import { generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
+import type { WeatherForecast } from '@/ai/types';
 
 type Crop = {
   id: string;

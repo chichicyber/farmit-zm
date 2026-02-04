@@ -3,15 +3,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GEMINI_MODEL } from '../model';
-
-const WeatherForecastSchema = z.object({
-  day: z.string(),
-  description: z.string(),
-  temp: z.string(),
-  condition: z.enum(['sunny', 'cloudy', 'rainy', 'partly-cloudy']),
-});
-
-export type WeatherForecast = z.infer<typeof WeatherForecastSchema>;
+import { WeatherForecastSchema, type WeatherForecast } from '@/ai/types';
 
 const weatherFlow = ai.defineFlow(
   {
