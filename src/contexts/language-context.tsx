@@ -44,16 +44,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 // ---
 
+/**
+ * Correctly retrieves a translation from a flat JSON object using a key.
+ * @param translations The translation object (e.g., en.json).
+ * @param key The key to look up (e.g., "app.name").
+ * @returns The translated string or undefined if not found.
+ */
 const getTranslation = (
   translations: any,
   key: string
 ): string | undefined => {
-  return key.split('.').reduce((obj, k) => {
-    if (obj && typeof obj === 'object' && k in obj) {
-      return obj[k];
-    }
-    return undefined;
-  }, translations);
+  return translations[key];
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
@@ -61,7 +62,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
 
   // After mounting on the client, check localStorage and update the state.
-  // This will trigger a re-render with the user's preferred language.
   useEffect(() => {
     const storedLang = localStorage.getItem('farmit-lang');
     if (storedLang && languages[storedLang as LanguageCode]) {
@@ -89,12 +89,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         translatedText = getTranslation(defaultTranslations, key);
       }
 
-      // If still not found, warn and return the key itself
+      // If still not found, return the key itself.
       if (translatedText === undefined) {
-        // This warning is helpful during development
-        // console.warn(
-        //   `Translation key not found in '${language}' or 'en': ${key}`
-        // );
         return key;
       }
       
@@ -107,7 +103,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
       return translatedText;
     },
-    [language] // The `t` function now correctly depends only on the language state
+    [language] 
   );
 
   const value = useMemo(
