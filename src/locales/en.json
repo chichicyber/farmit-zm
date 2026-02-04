@@ -16,7 +16,8 @@
     "en": "English",
     "bem": "Bemba",
     "toi": "Tonga",
-    "loz": "Lozi"
+    "loz": "Lozi",
+    "nya": "Nyanja"
   },
   "languageSwitcher.tooltip": "Change language",
   "userNav.profile": "Profile",

@@ -15,12 +15,14 @@ import enTranslations from '@/locales/en.json';
 import bemTranslations from '@/locales/bem.json';
 import toiTranslations from '@/locales/toi.json';
 import lozTranslations from '@/locales/loz.json';
+import nyaTranslations from '@/locales/nya.json';
 
 export const languages = {
   en: 'English',
   bem: 'Bemba',
   toi: 'Tonga',
   loz: 'Lozi',
+  nya: 'Nyanja',
 };
 export type LanguageCode = keyof typeof languages;
 
@@ -29,6 +31,7 @@ const allTranslations: Record<string, any> = {
   bem: bemTranslations,
   toi: toiTranslations,
   loz: lozTranslations,
+  nya: nyaTranslations,
 };
 // ---
 
@@ -91,6 +94,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
       // If still not found, return the key itself.
       if (translatedText === undefined) {
+        // In a development environment, you might want to log this.
+        // console.warn(`Translation key "${key}" not found.`);
         return key;
       }
       
