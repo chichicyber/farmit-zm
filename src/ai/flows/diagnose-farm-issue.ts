@@ -2,6 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { GEMINI_MODEL } from '../model';
 
 const diagnoseFarmIssueInputSchema = z.object({
   question: z.string(),
@@ -29,8 +30,13 @@ const diagnoseFarmIssueFlow = ai.defineFlow(
       promptParts.push({ media: { url: image } });
     }
 
+    /**
+     * MODEL LOCK:
+     * This function MUST use gemini-2.5-flash.
+     * Downgrading or switching models is NOT allowed.
+     */
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-pro-latest', // Pro model for better diagnosis
+      model: GEMINI_MODEL,
       prompt: promptParts,
       config: {
         temperature: 0.4,
@@ -45,13 +51,13 @@ const diagnoseFarmIssueFlow = ai.defineFlow(
     });
 
     if (!llmResponse.text) {
-         const reason = llmResponse.finishReason;
-         if (reason && reason !== 'STOP') {
-             console.error(`Diagnosis blocked. Reason: ${reason}`);
-             return `The AI could not provide a diagnosis because the request was blocked for safety reasons (${reason}). Please try a different image or description.`;
-         }
-         console.error("Diagnosis Error: No text returned from API.");
-         return "The AI did not return a response. This might be due to a content filter. Please try again with a different image or prompt.";
+      const reason = llmResponse.finishReason;
+      if (reason && reason !== 'STOP') {
+        console.error(`Diagnosis blocked. Reason: ${reason}`);
+        return `The AI could not provide a diagnosis because the request was blocked for safety reasons (${reason}). Please try a different image or description.`;
+      }
+      console.error('Diagnosis Error: No text returned from API.');
+      return 'The AI did not return a response. This might be due to a content filter. Please try again with a different image or prompt.';
     }
 
     return llmResponse.text;

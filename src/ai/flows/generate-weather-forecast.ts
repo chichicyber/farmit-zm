@@ -2,6 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { GEMINI_MODEL } from '../model';
 
 export const WeatherForecastSchema = z.object({
   day: z.string(),
@@ -35,8 +36,13 @@ const weatherFlow = ai.defineFlow(
   ]
   `;
 
+    /**
+     * MODEL LOCK:
+     * This function MUST use gemini-2.5-flash.
+     * Downgrading or switching models is NOT allowed.
+     */
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
+      model: GEMINI_MODEL,
       prompt: prompt,
       config: {
         temperature: 0.2,

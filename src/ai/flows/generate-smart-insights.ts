@@ -2,6 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { GEMINI_MODEL } from '../model';
 
 const smartInsightFlow = ai.defineFlow(
   {
@@ -18,8 +19,13 @@ const smartInsightFlow = ai.defineFlow(
 
     Your Answer:`;
 
+    /**
+     * MODEL LOCK:
+     * This function MUST use gemini-2.5-flash.
+     * Downgrading or switching models is NOT allowed.
+     */
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-pro-latest', // Upgraded model as requested
+      model: GEMINI_MODEL,
       prompt: prompt,
       config: {
         temperature: 0.7,
@@ -37,6 +43,8 @@ const smartInsightFlow = ai.defineFlow(
   }
 );
 
-export async function generateSmartInsight(userQuestion: string): Promise<string> {
+export async function generateSmartInsight(
+  userQuestion: string
+): Promise<string> {
   return await smartInsightFlow(userQuestion);
 }
