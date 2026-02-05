@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { BrainCircuit, Sprout, AlertTriangle, Sparkles, Volume2, Loader2 } from 'lucide-react';
+import { BrainCircuit, Sparkles, Volume2, Loader2 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -72,7 +72,7 @@ export default function FarmitSmartPage() {
   }, [t]);
 
 
-  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setInsight('');
     setAudioUrl(null);
