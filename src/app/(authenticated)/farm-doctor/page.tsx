@@ -20,7 +20,15 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bot, Camera, Sparkles, Stethoscope, Loader2 } from 'lucide-react';
+import {
+  Bot,
+  Camera,
+  Sparkles,
+  Stethoscope,
+  Loader2,
+  Mic,
+  StopCircle,
+} from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -32,6 +40,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useLanguage } from '@/contexts/language-context';
+import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 
 const formSchema = z.object({
   question: z
@@ -92,7 +101,6 @@ const resizeAndProcessImage = (file: File): Promise<Blob> => {
   });
 };
 
-
 export default function FarmDoctorPage() {
   const { t } = useLanguage();
   const [diagnosis, setDiagnosis] = useState('');
@@ -104,6 +112,10 @@ export default function FarmDoctorPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const firestore = useFirestore();
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,13 +133,17 @@ export default function FarmDoctorPage() {
     };
   }, [imagePreview]);
 
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsImageProcessing(true);
-      toast({ title: t('farmDoctor.imageProcessing.toast.title'), description: t('farmDoctor.imageProcessing.toast.description') });
-      
+      toast({
+        title: t('farmDoctor.imageProcessing.toast.title'),
+        description: t('farmDoctor.imageProcessing.toast.description'),
+      });
+
       try {
         const blob = await resizeAndProcessImage(file);
         setProcessedImage(blob);
@@ -136,17 +152,24 @@ export default function FarmDoctorPage() {
           URL.revokeObjectURL(imagePreview);
         }
         setImagePreview(URL.createObjectURL(blob));
-        
-        toast({ title: t('farmDoctor.imageReady.toast.title'), description: t('farmDoctor.imageReady.toast.description') });
+
+        toast({
+          title: t('farmDoctor.imageReady.toast.title'),
+          description: t('farmDoctor.imageReady.toast.description'),
+        });
       } catch (error) {
-        console.error("Image processing error:", error);
-        toast({ variant: 'destructive', title: t('farmDoctor.imageError.toast.title'), description: t('farmDoctor.imageError.toast.description') });
+        console.error('Image processing error:', error);
+        toast({
+          variant: 'destructive',
+          title: t('farmDoctor.imageError.toast.title'),
+          description: t('farmDoctor.imageError.toast.description'),
+        });
         setProcessedImage(null);
         setImagePreview(null);
       } finally {
         setIsImageProcessing(false);
         // Reset file input to allow selecting the same file again
-        if(fileInputRef.current) fileInputRef.current.value = "";
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     }
   };
@@ -169,7 +192,7 @@ export default function FarmDoctorPage() {
       if (processedImage) {
         imageDataUri = await blobToDataUrl(processedImage);
       }
-      
+
       const result = await diagnoseFarmIssue({
         question: values.question,
         image: imageDataUri,
@@ -178,7 +201,7 @@ export default function FarmDoctorPage() {
       setDiagnosis(result);
 
       if (user && firestore && result) {
-         try {
+        try {
           await addDoc(collection(firestore, 'users', user.uid, 'diagnoses'), {
             userId: user.uid,
             question: values.question,
@@ -190,14 +213,87 @@ export default function FarmDoctorPage() {
         }
       }
     } catch (error: any) {
-      console.error("Diagnosis submission error:", error);
+      console.error('Diagnosis submission error:', error);
       toast({
         variant: 'destructive',
         title: t('farmDoctor.diagnosisError.toast.title'),
-        description: error.message || t('farmDoctor.diagnosisError.toast.description'),
+        description:
+          error.message || t('farmDoctor.diagnosisError.toast.description'),
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVoiceSearch = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      // The onstop event will handle the transcription
+    } else {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast({
+          variant: 'destructive',
+          title: t('farmDoctor.voiceSearch.notSupported.title'),
+          description: t('farmDoctor.voiceSearch.notSupported.description'),
+        });
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        setIsRecording(true);
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'audio/webm',
+        });
+        mediaRecorderRef.current = mediaRecorder;
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            setIsTranscribing(true);
+            try {
+              const transcript = await transcribeAudio(base64Audio);
+              form.setValue('question', transcript, { shouldValidate: true });
+            } catch (error: any) {
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: t('farmDoctor.voiceSearch.transcriptionError.title'),
+                description:
+                  error.message ||
+                  t('farmDoctor.voiceSearch.transcriptionError.description'),
+              });
+            } finally {
+              setIsTranscribing(false);
+            }
+          };
+          // Stop all tracks to release the microphone
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        mediaRecorder.start();
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
+        toast({
+          variant: 'destructive',
+          title: t('farmDoctor.voiceSearch.micPermissionError.title'),
+          description: t(
+            'farmDoctor.voiceSearch.micPermissionError.description'
+          ),
+        });
+        setIsRecording(false);
+      }
     }
   };
 
@@ -205,11 +301,10 @@ export default function FarmDoctorPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="flex items-center gap-2 text-3xl font-bold font-headline tracking-tight">
-          <Stethoscope className="h-8 w-8 text-primary" /> {t('farmDoctor.title')}
+          <Stethoscope className="h-8 w-8 text-primary" />{' '}
+          {t('farmDoctor.title')}
         </h1>
-        <p className="text-muted-foreground">
-          {t('farmDoctor.description')}
-        </p>
+        <p className="text-muted-foreground">{t('farmDoctor.description')}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -232,10 +327,14 @@ export default function FarmDoctorPage() {
                     name="question"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('farmDoctor.submitCaseCard.issueLabel')}</FormLabel>
+                        <FormLabel>
+                          {t('farmDoctor.submitCaseCard.issueLabel')}
+                        </FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder={t('farmDoctor.submitCaseCard.issuePlaceholder')}
+                            placeholder={t(
+                              'farmDoctor.submitCaseCard.issuePlaceholder'
+                            )}
                             {...field}
                           />
                         </FormControl>
@@ -245,7 +344,9 @@ export default function FarmDoctorPage() {
                   />
 
                   <div className="space-y-2">
-                    <FormLabel>{t('farmDoctor.submitCaseCard.photoLabel')}</FormLabel>
+                    <FormLabel>
+                      {t('farmDoctor.submitCaseCard.photoLabel')}
+                    </FormLabel>
                     <input
                       type="file"
                       accept="image/*"
@@ -267,7 +368,9 @@ export default function FarmDoctorPage() {
                       ) : (
                         <Camera className="mr-2 h-4 w-4" />
                       )}
-                      {isImageProcessing ? t('farmDoctor.submitCaseCard.processingButton') : t('farmDoctor.submitCaseCard.uploadButton')}
+                      {isImageProcessing
+                        ? t('farmDoctor.submitCaseCard.processingButton')
+                        : t('farmDoctor.submitCaseCard.uploadButton')}
                     </Button>
                   </div>
 
@@ -282,16 +385,50 @@ export default function FarmDoctorPage() {
                     </div>
                   )}
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || isImageProcessing}
-                  >
-                    {isLoading ? (
-                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ): null}
-                    {isLoading ? t('farmDoctor.submitCaseCard.diagnosingButton') : t('farmDoctor.submitCaseCard.getDiagnosisButton')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="submit"
+                      className="flex-grow"
+                      disabled={
+                        isLoading ||
+                        isImageProcessing ||
+                        isRecording ||
+                        isTranscribing
+                      }
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      {isLoading
+                        ? t('farmDoctor.submitCaseCard.diagnosingButton')
+                        : t('farmDoctor.submitCaseCard.getDiagnosisButton')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleVoiceSearch}
+                      disabled={isLoading || isImageProcessing || isTranscribing}
+                      title={
+                        isRecording
+                          ? t('farmDoctor.voiceSearch.stopRecording')
+                          : t('farmDoctor.voiceSearch.startRecording')
+                      }
+                    >
+                      {isRecording ? (
+                        <StopCircle className="h-5 w-5 animate-pulse text-destructive" />
+                      ) : isTranscribing ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Mic className="h-5 w-5" />
+                      )}
+                      <span className="sr-only">
+                        {isRecording
+                          ? t('farmDoctor.voiceSearch.stopRecording')
+                          : t('farmDoctor.voiceSearch.startRecording')}
+                      </span>
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
@@ -322,7 +459,9 @@ export default function FarmDoctorPage() {
               ) : (
                 <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-muted-foreground">
                   <Bot className="mx-auto h-12 w-12" />
-                  <p className="mt-4">{t('farmDoctor.diagnosisCard.placeholder')}</p>
+                  <p className="mt-4">
+                    {t('farmDoctor.diagnosisCard.placeholder')}
+                  </p>
                 </div>
               )}
             </CardContent>
