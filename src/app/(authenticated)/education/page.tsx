@@ -59,6 +59,7 @@ export default function FarmitSmartPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [isVoiceQuery, setIsVoiceQuery] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -88,7 +89,10 @@ export default function FarmitSmartPage() {
     setInsight('');
     setAudioUrl(null);
     try {
-      const result = await generateSmartInsight(values.question);
+      const result = await generateSmartInsight({
+        userQuestion: values.question,
+        isVoice: isVoiceQuery,
+      });
       setInsight(result);
     } catch (error: any) {
       console.error(error);
@@ -99,6 +103,7 @@ export default function FarmitSmartPage() {
       });
     } finally {
       setIsLoading(false);
+      setIsVoiceQuery(false);
     }
   }
 
@@ -158,6 +163,7 @@ export default function FarmitSmartPage() {
             try {
               const transcript = await transcribeAudio(base64Audio);
               form.setValue('question', transcript, { shouldValidate: true });
+              setIsVoiceQuery(true);
             } catch (error: any) {
               console.error(error);
               toast({
@@ -228,6 +234,10 @@ export default function FarmitSmartPage() {
                           'farmitSmart.askCard.questionPlaceholder'
                         )}
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setIsVoiceQuery(false);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -301,7 +311,7 @@ export default function FarmitSmartPage() {
                     <Skeleton className="h-4 w-3/4" />
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-none text-foreground">
+                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {insight}
                     </ReactMarkdown>

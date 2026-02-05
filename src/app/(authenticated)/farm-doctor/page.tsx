@@ -184,7 +184,7 @@ export default function FarmDoctorPage() {
     });
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setDiagnosis('');
 
@@ -226,7 +226,7 @@ export default function FarmDoctorPage() {
       setIsLoading(false);
       setIsVoiceQuery(false);
     }
-  };
+  }
 
   const handleVoiceSearch = async () => {
     if (isRecording) {
