@@ -116,6 +116,7 @@ export default function FarmDoctorPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [isVoiceQuery, setIsVoiceQuery] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -183,7 +184,7 @@ export default function FarmDoctorPage() {
     });
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
     setIsLoading(true);
     setDiagnosis('');
 
@@ -196,6 +197,7 @@ export default function FarmDoctorPage() {
       const result = await diagnoseFarmIssue({
         question: values.question,
         image: imageDataUri,
+        isVoice: isVoiceQuery,
       });
 
       setDiagnosis(result);
@@ -222,6 +224,7 @@ export default function FarmDoctorPage() {
       });
     } finally {
       setIsLoading(false);
+      setIsVoiceQuery(false);
     }
   };
 
@@ -265,6 +268,7 @@ export default function FarmDoctorPage() {
             try {
               const transcript = await transcribeAudio(base64Audio);
               form.setValue('question', transcript, { shouldValidate: true });
+              setIsVoiceQuery(true);
             } catch (error: any) {
               console.error(error);
               toast({
@@ -336,6 +340,10 @@ export default function FarmDoctorPage() {
                               'farmDoctor.submitCaseCard.issuePlaceholder'
                             )}
                             {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setIsVoiceQuery(false);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -451,7 +459,7 @@ export default function FarmDoctorPage() {
                   <Skeleton className="h-4 w-3/4" />
                 </div>
               ) : diagnosis ? (
-                <div className="prose prose-sm max-w-none text-foreground">
+                <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {diagnosis}
                   </ReactMarkdown>
