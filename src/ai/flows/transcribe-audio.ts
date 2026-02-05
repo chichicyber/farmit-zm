@@ -4,14 +4,19 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { GEMINI_MODEL } from '../model';
 
+const transcribeAudioInputSchema = z.object({
+  audioDataUri: z.string().describe('The audio data to transcribe, as a data URI.'),
+  languageName: z.string().describe('The name of the language being spoken (e.g., "Bemba", "English").'),
+});
+
 const transcribeAudioFlow = ai.defineFlow(
   {
     name: 'transcribeAudioFlow',
-    inputSchema: z.string(), // audio data URI
+    inputSchema: transcribeAudioInputSchema,
     outputSchema: z.string(),
   },
-  async (audioDataUri) => {
-    const prompt = `Transcribe the following audio recording. The user is asking a question about farming in Zambia, likely in English or a local Zambian language. Respond only with the transcribed text. Do not add any extra phrases like "Here is the transcription:". Just provide the raw text.`;
+  async ({ audioDataUri, languageName }) => {
+    const prompt = `Transcribe the following audio recording. The user is asking a question about farming in Zambia. The user is speaking ${languageName}. Respond only with the transcribed text. Do not add any extra phrases like "Here is the transcription:". Just provide the raw text.`;
 
     const llmResponse = await ai.generate({
       model: GEMINI_MODEL,
@@ -28,6 +33,6 @@ const transcribeAudioFlow = ai.defineFlow(
   }
 );
 
-export async function transcribeAudio(audioDataUri: string): Promise<string> {
-  return await transcribeAudioFlow(audioDataUri);
+export async function transcribeAudio(input: { audioDataUri: string; languageName: string; }): Promise<string> {
+  return await transcribeAudioFlow(input);
 }

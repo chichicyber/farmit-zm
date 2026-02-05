@@ -39,7 +39,7 @@ import Image from 'next/image';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { useLanguage } from '@/contexts/language-context';
+import { useLanguage, languages } from '@/contexts/language-context';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 
 const formSchema = z.object({
@@ -102,7 +102,7 @@ const resizeAndProcessImage = (file: File): Promise<Blob> => {
 };
 
 export default function FarmDoctorPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [diagnosis, setDiagnosis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
@@ -266,7 +266,11 @@ export default function FarmDoctorPage() {
             const base64Audio = reader.result as string;
             setIsTranscribing(true);
             try {
-              const transcript = await transcribeAudio(base64Audio);
+              const languageName = languages[language] || 'English';
+              const transcript = await transcribeAudio({
+                audioDataUri: base64Audio,
+                languageName,
+              });
               form.setValue('question', transcript, { shouldValidate: true });
               setIsVoiceQuery(true);
             } catch (error: any) {

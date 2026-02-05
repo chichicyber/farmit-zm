@@ -36,7 +36,7 @@ import { z } from 'zod';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateSmartInsight } from '@/ai/flows/generate-smart-insights';
-import { useLanguage } from '@/contexts/language-context';
+import { useLanguage, languages } from '@/contexts/language-context';
 import { generateSpeech } from '@/ai/flows/generate-speech';
 import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 
@@ -45,7 +45,7 @@ const formSchema = z.object({
 });
 
 export default function FarmitSmartPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [welcomeText, setWelcomeText] = useState('');
 
   const [insight, setInsight] = useState('');
@@ -161,7 +161,11 @@ export default function FarmitSmartPage() {
             const base64Audio = reader.result as string;
             setIsTranscribing(true);
             try {
-              const transcript = await transcribeAudio(base64Audio);
+              const languageName = languages[language] || 'English';
+              const transcript = await transcribeAudio({
+                audioDataUri: base64Audio,
+                languageName,
+              });
               form.setValue('question', transcript, { shouldValidate: true });
               setIsVoiceQuery(true);
             } catch (error: any) {
