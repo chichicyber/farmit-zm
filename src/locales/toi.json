@@ -327,5 +327,13 @@
   "cropTypes.soyabeans": "Soya",
   "cropTypes.wheat": "Witi",
   "cropTypes.groundnuts": "Ntoomwe",
-  "cropTypes.cotton": "Kotoni"
+  "cropTypes.cotton": "Kotoni",
+  "farmitSmart.voiceSearch.notSupported.title": "Kuyandaula amajwi Kutaide",
+  "farmitSmart.voiceSearch.notSupported.description": "Browser yanu tiiizumizyi kurekodwa kwamajwi.",
+  "farmitSmart.voiceSearch.micPermissionError.title": "Microphone Yakakwa",
+  "farmitSmart.voiceSearch.micPermissionError.description": "Amzumizye microphone muli browser yanu kuti mubelesye kuyandaula amajwi.",
+  "farmitSmart.voiceSearch.transcriptionError.title": "Kupandulula Kwakaka",
+  "farmitSmart.voiceSearch.transcriptionError.description": "Amajwi taakamvwika. Amusole kwaamba alimwi.",
+  "farmitSmart.voiceSearch.startRecording": "Amutalike kuyandaula amajwi",
+  "farmitSmart.voiceSearch.stopRecording": "Amuleke kurekoda"
 }

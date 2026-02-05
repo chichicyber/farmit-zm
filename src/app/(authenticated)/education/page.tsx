@@ -26,6 +26,8 @@ import {
   Loader2,
   Sprout,
   AlertTriangle,
+  Mic,
+  StopCircle,
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -36,6 +38,7 @@ import remarkGfm from 'remark-gfm';
 import { generateSmartInsight } from '@/ai/flows/generate-smart-insights';
 import { useLanguage } from '@/contexts/language-context';
 import { generateSpeech } from '@/ai/flows/generate-speech';
+import { transcribeAudio } from '@/ai/flows/transcribe-audio';
 
 const formSchema = z.object({
   question: z.string().min(10, 'Please ask a more detailed question.'),
@@ -52,6 +55,10 @@ export default function FarmitSmartPage() {
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -115,6 +122,72 @@ export default function FarmitSmartPage() {
     }
   };
 
+  const handleVoiceSearch = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      // The onstop event will handle the transcription
+    } else {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast({
+          variant: 'destructive',
+          title: t('farmitSmart.voiceSearch.notSupported.title'),
+          description: t('farmitSmart.voiceSearch.notSupported.description'),
+        });
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setIsRecording(true);
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = mediaRecorder;
+        const audioChunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            setIsTranscribing(true);
+            try {
+              const transcript = await transcribeAudio(base64Audio);
+              form.setValue('question', transcript, { shouldValidate: true });
+            } catch (error: any) {
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: t('farmitSmart.voiceSearch.transcriptionError.title'),
+                description:
+                  error.message ||
+                  t('farmitSmart.voiceSearch.transcriptionError.description'),
+              });
+            } finally {
+              setIsTranscribing(false);
+            }
+          };
+           // Stop all tracks to release the microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
+        toast({
+          variant: 'destructive',
+          title: t('farmitSmart.voiceSearch.micPermissionError.title'),
+          description: t('farmitSmart.voiceSearch.micPermissionError.description'),
+        });
+        setIsRecording(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (audioUrl && audioRef.current) {
       audioRef.current.play();
@@ -161,11 +234,37 @@ export default function FarmitSmartPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading
-                  ? t('farmitSmart.askCard.gettingInsightsButton')
-                  : t('farmitSmart.askCard.getInsightsButton')}
-              </Button>
+              <div className="flex items-center gap-2">
+                 <Button
+                  type="submit"
+                  disabled={isLoading || isRecording || isTranscribing}
+                >
+                  {isLoading
+                    ? t('farmitSmart.askCard.gettingInsightsButton')
+                    : t('farmitSmart.askCard.getInsightsButton')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleVoiceSearch}
+                  disabled={isLoading || isTranscribing}
+                  title={isRecording ? t('farmitSmart.voiceSearch.stopRecording') : t('farmitSmart.voiceSearch.startRecording')}
+                >
+                  {isRecording ? (
+                    <StopCircle className="h-5 w-5 animate-pulse text-destructive" />
+                  ) : isTranscribing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Mic className="h-5 w-5" />
+                  )}
+                  <span className="sr-only">
+                    {isRecording
+                      ? t('farmitSmart.voiceSearch.stopRecording')
+                      : t('farmitSmart.voiceSearch.startRecording')}
+                  </span>
+                </Button>
+              </div>
             </form>
           </Form>
 

@@ -327,5 +327,13 @@
   "cropTypes.soyabeans": "Soyabeans",
   "cropTypes.wheat": "Wheat",
   "cropTypes.groundnuts": "Groundnuts",
-  "cropTypes.cotton": "Cotton"
+  "cropTypes.cotton": "Cotton",
+  "farmitSmart.voiceSearch.notSupported.title": "Voice Search Not Supported",
+  "farmitSmart.voiceSearch.notSupported.description": "Your browser does not support audio recording.",
+  "farmitSmart.voiceSearch.micPermissionError.title": "Microphone Access Denied",
+  "farmitSmart.voiceSearch.micPermissionError.description": "Please allow microphone access in your browser settings to use voice search.",
+  "farmitSmart.voiceSearch.transcriptionError.title": "Transcription Failed",
+  "farmitSmart.voiceSearch.transcriptionError.description": "Could not understand audio. Please try speaking again.",
+  "farmitSmart.voiceSearch.startRecording": "Start voice search",
+  "farmitSmart.voiceSearch.stopRecording": "Stop recording"
 }

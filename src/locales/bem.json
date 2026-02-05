@@ -327,5 +327,13 @@
   "cropTypes.soyabeans": "Soya",
   "cropTypes.wheat": "Tirigu",
   "cropTypes.groundnuts": "Amantongomane",
-  "cropTypes.cotton": "Toni"
+  "cropTypes.cotton": "Toni",
+  "farmitSmart.voiceSearch.notSupported.title": "Ukufwaya pa Jwi Tacili Pano",
+  "farmitSmart.voiceSearch.notSupported.description": "Browser yenu tayisuminisha ukulekoda amajwi.",
+  "farmitSmart.voiceSearch.micPermissionError.title": "Microphone Yaakanwa",
+  "farmitSmart.voiceSearch.micPermissionError.description": "Suminisheni microphone muli browser yenu pa kubomfya ukufwaya pa jwi.",
+  "farmitSmart.voiceSearch.transcriptionError.title": "Ukupilibula Kwakana",
+  "farmitSmart.voiceSearch.transcriptionError.description": "Amajwi tayomfwike. Yeshenimo nakabili.",
+  "farmitSmart.voiceSearch.startRecording": "Tampeni ukufwaya pa jwi",
+  "farmitSmart.voiceSearch.stopRecording": "Lekeni ukulekoda"
 }

@@ -327,5 +327,13 @@
   "cropTypes.soyabeans": "Soya",
   "cropTypes.wheat": "Witi",
   "cropTypes.groundnuts": "Mandongwe",
-  "cropTypes.cotton": "Wulu"
+  "cropTypes.cotton": "Wulu",
+  "farmitSmart.voiceSearch.notSupported.title": "Ku Bata ka Linzwi ha ku yo",
+  "farmitSmart.voiceSearch.notSupported.description": "Browser ya hao ha i lumelezi ku rekota linzwi.",
+  "farmitSmart.voiceSearch.micPermissionError.title": "Microphone i Hanilwe",
+  "farmitSmart.voiceSearch.micPermissionError.description": "Lumeleza microphone mwa browser ya hao kuli u sebelise ku bata ka linzwi.",
+  "farmitSmart.voiceSearch.transcriptionError.title": "Ku Toloka ku Palehile",
+  "farmitSmart.voiceSearch.transcriptionError.description": "Linzwi ha li si ka utwahala. Lika hape.",
+  "farmitSmart.voiceSearch.startRecording": "Kala ku bata ka linzwi",
+  "farmitSmart.voiceSearch.stopRecording": "Tuhela ku rekota"
 }

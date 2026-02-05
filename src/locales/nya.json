@@ -327,5 +327,13 @@
   "cropTypes.soyabeans": "Soya",
   "cropTypes.wheat": "Tirigu",
   "cropTypes.groundnuts": "Mtedza",
-  "cropTypes.cotton": "Thonje"
+  "cropTypes.cotton": "Thonje",
+  "farmitSmart.voiceSearch.notSupported.title": "Kufufuza ndi Mawu Sikupezeka",
+  "farmitSmart.voiceSearch.notSupported.description": "Browser yanu siyilola kujambula mawu.",
+  "farmitSmart.voiceSearch.micPermissionError.title": "Maikolofoni Yakanidwa",
+  "farmitSmart.voiceSearch.micPermissionError.description": "Lolani maikolofoni mu browser yanu kuti mugwiritse ntchito kufufuza ndi mawu.",
+  "farmitSmart.voiceSearch.transcriptionError.title": "Kumasulira Kwalephera",
+  "farmitSmart.voiceSearch.transcriptionError.description": "Mawu sanamveke. Chonde yesaninso.",
+  "farmitSmart.voiceSearch.startRecording": "Yambani kufufuza ndi mawu",
+  "farmitSmart.voiceSearch.stopRecording": "Lekani kujambula"
 }
