@@ -19,7 +19,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { BrainCircuit, Sparkles, Volume2, Loader2 } from 'lucide-react';
+import {
+  BrainCircuit,
+  Sparkles,
+  Volume2,
+  Loader2,
+  Sprout,
+  AlertTriangle,
+} from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +37,6 @@ import { generateSmartInsight } from '@/ai/flows/generate-smart-insights';
 import { useLanguage } from '@/contexts/language-context';
 import { generateSpeech } from '@/ai/flows/generate-speech';
 
-
 const formSchema = z.object({
   question: z.string().min(10, 'Please ask a more detailed question.'),
 });
@@ -38,7 +44,7 @@ const formSchema = z.object({
 export default function FarmitSmartPage() {
   const { t } = useLanguage();
   const [welcomeText, setWelcomeText] = useState('');
-  
+
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -46,7 +52,6 @@ export default function FarmitSmartPage() {
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,7 +66,7 @@ export default function FarmitSmartPage() {
     setWelcomeText(''); // Reset before starting
     const typingInterval = setInterval(() => {
       if (i < welcomeMessage.length) {
-        setWelcomeText(prev => prev + welcomeMessage.charAt(i));
+        setWelcomeText((prev) => prev + welcomeMessage.charAt(i));
         i++;
       } else {
         clearInterval(typingInterval);
@@ -70,7 +75,6 @@ export default function FarmitSmartPage() {
 
     return () => clearInterval(typingInterval);
   }, [t]);
-
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -89,33 +93,33 @@ export default function FarmitSmartPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   const handleListen = async () => {
     if (!insight) return;
     setIsGeneratingSpeech(true);
     setAudioUrl(null);
     try {
-        const { audioUrl } = await generateSpeech(insight);
-        setAudioUrl(audioUrl);
+      const { audioUrl } = await generateSpeech(insight);
+      setAudioUrl(audioUrl);
     } catch (error: any) {
-        console.error("Audio generation failed:", error);
-        toast({
-            variant: "destructive",
-            title: t('farmitSmart.listenError.toast.title'),
-            description: error.message || t('farmitSmart.listenError.toast.description'),
-        });
+      console.error('Audio generation failed:', error);
+      toast({
+        variant: 'destructive',
+        title: t('farmitSmart.listenError.toast.title'),
+        description:
+          error.message || t('farmitSmart.listenError.toast.description'),
+      });
     } finally {
-        setIsGeneratingSpeech(false);
+      setIsGeneratingSpeech(false);
     }
   };
 
   useEffect(() => {
     if (audioUrl && audioRef.current) {
-        audioRef.current.play();
+      audioRef.current.play();
     }
   }, [audioUrl]);
-
 
   return (
     <div className="flex flex-col gap-6">
@@ -126,7 +130,7 @@ export default function FarmitSmartPage() {
         </h1>
         <p className="h-5 text-muted-foreground">{welcomeText}</p>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>{t('farmitSmart.askCard.title')}</CardTitle>
@@ -142,10 +146,14 @@ export default function FarmitSmartPage() {
                 name="question"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('farmitSmart.askCard.questionLabel')}</FormLabel>
+                    <FormLabel>
+                      {t('farmitSmart.askCard.questionLabel')}
+                    </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder={t('farmitSmart.askCard.questionPlaceholder')}
+                        placeholder={t(
+                          'farmitSmart.askCard.questionPlaceholder'
+                        )}
                         {...field}
                       />
                     </FormControl>
@@ -154,43 +162,61 @@ export default function FarmitSmartPage() {
                 )}
               />
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? t('farmitSmart.askCard.gettingInsightsButton') : t('farmitSmart.askCard.getInsightsButton')}
+                {isLoading
+                  ? t('farmitSmart.askCard.gettingInsightsButton')
+                  : t('farmitSmart.askCard.getInsightsButton')}
               </Button>
             </form>
           </Form>
-        
+
           {(isLoading || insight) && (
             <div className="mt-6 rounded-lg border bg-card p-4">
               <div className="flex items-center justify-between">
                 <h4 className="flex items-center gap-2 font-semibold">
-                   <Sparkles className="h-5 w-5 text-accent" />
-                   {t('farmitSmart.askCard.aiInsightTitle')}
+                  <Sparkles className="h-5 w-5 text-accent" />
+                  {t('farmitSmart.askCard.aiInsightTitle')}
                 </h4>
                 {insight && !isLoading && (
-                    <Button variant="outline" size="sm" onClick={handleListen} disabled={isGeneratingSpeech}>
-                        {isGeneratingSpeech ? (
-                           <Loader2 className="h-4 w-4 animate-spin"/>
-                        ) : (
-                           <Volume2 className="h-4 w-4" />
-                        )}
-                        {isGeneratingSpeech ? t('farmitSmart.listenButton.loading') : t('farmitSmart.listenButton.default')}
-                    </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleListen}
+                    disabled={isGeneratingSpeech}
+                  >
+                    {isGeneratingSpeech ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                    {isGeneratingSpeech
+                      ? t('farmitSmart.listenButton.loading')
+                      : t('farmitSmart.listenButton.default')}
+                  </Button>
                 )}
               </div>
               <div className="mt-2 text-sm text-muted-foreground">
-              {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none text-foreground">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
-                </div>
-              )}
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {insight}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
-              {audioUrl && <audio ref={audioRef} src={audioUrl} className="mt-4 w-full" controls />}
+              {audioUrl && (
+                <audio
+                  ref={audioRef}
+                  src={audioUrl}
+                  className="mt-4 w-full"
+                  controls
+                />
+              )}
             </div>
           )}
         </CardContent>
@@ -206,13 +232,17 @@ export default function FarmitSmartPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border bg-card p-4">
-              <h4 className="font-semibold">{t('farmitSmart.agronomicInsights.cropRotation.title')}</h4>
+              <h4 className="font-semibold">
+                {t('farmitSmart.agronomicInsights.cropRotation.title')}
+              </h4>
               <p className="text-sm text-muted-foreground">
                 {t('farmitSmart.agronomicInsights.cropRotation.description')}
               </p>
             </div>
             <div className="rounded-lg border bg-card p-4">
-              <h4 className="font-semibold">{t('farmitSmart.agronomicInsights.plantingTime.title')}</h4>
+              <h4 className="font-semibold">
+                {t('farmitSmart.agronomicInsights.plantingTime.title')}
+              </h4>
               <p className="text-sm text-muted-foreground">
                 {t('farmitSmart.agronomicInsights.plantingTime.description')}
               </p>
@@ -236,7 +266,7 @@ export default function FarmitSmartPage() {
                 {t('farmitSmart.riskAlerts.fallArmyworm.description')}
               </p>
             </div>
-             <div className="rounded-lg border border-accent/50 bg-accent/5 p-4">
+            <div className="rounded-lg border border-accent/50 bg-accent/5 p-4">
               <h4 className="font-semibold text-accent-foreground/80">
                 {t('farmitSmart.riskAlerts.newcastleDisease.title')}
               </h4>
@@ -248,17 +278,16 @@ export default function FarmitSmartPage() {
         </Card>
       </div>
 
-       <Card>
+      <Card>
         <CardHeader>
-            <CardTitle>{t('farmitSmart.howItWorks.title')}</CardTitle>
+          <CardTitle>{t('farmitSmart.howItWorks.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-            <CardDescription>
-                {t('farmitSmart.howItWorks.description')}
-            </CardDescription>
+          <CardDescription>
+            {t('farmitSmart.howItWorks.description')}
+          </CardDescription>
         </CardContent>
-       </Card>
-
+      </Card>
     </div>
   );
 }
