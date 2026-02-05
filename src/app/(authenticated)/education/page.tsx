@@ -72,7 +72,7 @@ export default function FarmitSmartPage() {
   }, [t]);
 
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>>) => {
     setIsLoading(true);
     setInsight('');
     setAudioUrl(null);
@@ -158,10 +158,9 @@ export default function FarmitSmartPage() {
               </Button>
             </form>
           </Form>
-        </CardContent>
-        {(isLoading || insight) && (
-          <CardContent>
-            <div className="mt-4 rounded-lg border bg-card p-4">
+        
+          {(isLoading || insight) && (
+            <div className="mt-6 rounded-lg border bg-card p-4">
               <div className="flex items-center justify-between">
                 <h4 className="flex items-center gap-2 font-semibold">
                    <Sparkles className="h-5 w-5 text-accent" />
@@ -193,8 +192,8 @@ export default function FarmitSmartPage() {
               </div>
               {audioUrl && <audio ref={audioRef} src={audioUrl} className="mt-4 w-full" controls />}
             </div>
-          </CardContent>
-        )}
+          )}
+        </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
