@@ -19,8 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { BrainCircuit, Sprout, AlertTriangle, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BrainCircuit, Sprout, AlertTriangle, Sparkles, Volume2, Loader2 } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateSmartInsight } from '@/ai/flows/generate-smart-insights';
 import { useLanguage } from '@/contexts/language-context';
+import { generateSpeech } from '@/ai/flows/generate-speech';
 
 
 const formSchema = z.object({
@@ -41,6 +42,11 @@ export default function FarmitSmartPage() {
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,6 +75,7 @@ export default function FarmitSmartPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setInsight('');
+    setAudioUrl(null);
     try {
       const result = await generateSmartInsight(values.question);
       setInsight(result);
@@ -83,6 +90,31 @@ export default function FarmitSmartPage() {
       setIsLoading(false);
     }
   };
+
+  const handleListen = async () => {
+    if (!insight) return;
+    setIsGeneratingSpeech(true);
+    setAudioUrl(null);
+    try {
+        const { audioUrl } = await generateSpeech(insight);
+        setAudioUrl(audioUrl);
+    } catch (error: any) {
+        console.error("Audio generation failed:", error);
+        toast({
+            variant: "destructive",
+            title: t('farmitSmart.listenError.toast.title'),
+            description: error.message || t('farmitSmart.listenError.toast.description'),
+        });
+    } finally {
+        setIsGeneratingSpeech(false);
+    }
+  };
+
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+        audioRef.current.play();
+    }
+  }, [audioUrl]);
 
 
   return (
@@ -130,10 +162,22 @@ export default function FarmitSmartPage() {
         {(isLoading || insight) && (
           <CardContent>
             <div className="mt-4 rounded-lg border bg-card p-4">
-              <h4 className="flex items-center gap-2 font-semibold">
-                 <Sparkles className="h-5 w-5 text-accent" />
-                 {t('farmitSmart.askCard.aiInsightTitle')}
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="flex items-center gap-2 font-semibold">
+                   <Sparkles className="h-5 w-5 text-accent" />
+                   {t('farmitSmart.askCard.aiInsightTitle')}
+                </h4>
+                {insight && !isLoading && (
+                    <Button variant="outline" size="sm" onClick={handleListen} disabled={isGeneratingSpeech}>
+                        {isGeneratingSpeech ? (
+                           <Loader2 className="h-4 w-4 animate-spin"/>
+                        ) : (
+                           <Volume2 className="h-4 w-4" />
+                        )}
+                        {isGeneratingSpeech ? t('farmitSmart.listenButton.loading') : t('farmitSmart.listenButton.default')}
+                    </Button>
+                )}
+              </div>
               <div className="mt-2 text-sm text-muted-foreground">
               {isLoading ? (
                 <div className="space-y-2">
@@ -147,6 +191,7 @@ export default function FarmitSmartPage() {
                 </div>
               )}
               </div>
+              {audioUrl && <audio ref={audioRef} src={audioUrl} className="mt-4 w-full" controls />}
             </div>
           </CardContent>
         )}
