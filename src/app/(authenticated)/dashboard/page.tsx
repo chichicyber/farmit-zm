@@ -29,7 +29,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
-  useAuth,
+  useUser,
   useCollection,
   useFirestore,
   useMemoFirebase,
@@ -67,7 +67,7 @@ const weatherIcons: { [key: string]: React.ElementType } = {
 export default function DashboardPage() {
   const { t } = useLanguage();
   const farmImage = PlaceHolderImages.find((p) => p.id === 'hero-farm');
-  const { user } = useAuth();
+  const { user } = useUser();
   const firestore = useFirestore();
 
   const [forecast, setForecast] = useState<WeatherForecast[] | null>(null);
