@@ -29,7 +29,7 @@ const recommendationFlow = ai.defineFlow(
           { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
         ],
       },
-    });
+    } as any);
 
     return llmResponse.text;
   }

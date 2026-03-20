@@ -66,11 +66,11 @@ const diagnoseFarmIssueFlow = ai.defineFlow(
           { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
         ],
       },
-    });
+    } as any);
 
     if (!llmResponse.text) {
       const reason = llmResponse.finishReason;
-      if (reason && reason !== 'STOP') {
+      if (reason && reason !== 'stop') {
         console.error(`Diagnosis blocked. Reason: ${reason}`);
         return `The AI could not provide a diagnosis because the request was blocked for safety reasons (${reason}). Please try a different image or description.`;
       }
