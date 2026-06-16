@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 56% 91%;
+    --foreground: 23 22% 21%;
+    --card: 43 67% 97%;
+    --card-foreground: 23 22% 21%;
+    --popover: 43 67% 97%;
+    --popover-foreground: 23 22% 21%;
+    --primary: 124 43% 39%;
+    --primary-foreground: 43 67% 97%;
+    --secondary: 124 25% 80%;
+    --secondary-foreground: 124 43% 20%;
+    --muted: 124 30% 88%;
+    --muted-foreground: 124 15% 45%;
+    --accent: 14 69% 62%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 40 27% 77%;
+    --input: 33 20% 81%;
+    --ring: 124 43% 39%;
+    --radius: 0.5rem;
+
+    --sidebar-background: 43 67% 97%;
+    --sidebar-foreground: 23 22% 21%;
+    --sidebar-primary: 124 43% 39%;
+    --sidebar-primary-foreground: 43 67% 97%;
+    --sidebar-accent: 124 25% 80%;
+    --sidebar-accent-foreground: 124 43% 20%;
+    --sidebar-border: 40 27% 77%;
+    --sidebar-ring: 124 43% 39%;
+  }
+
+  .dark {
+    --background: 23 15% 15%;
+    --foreground: 60 30% 90%;
+    --card: 23 15% 18%;
+    --card-foreground: 60 30% 90%;
+    --popover: 23 15% 18%;
+    --popover-foreground: 60 30% 90%;
+    --primary: 124 43% 39%;
+    --primary-foreground: 43 67% 97%;
+    --secondary: 124 20% 25%;
+    --secondary-foreground: 60 30% 90%;
+    --muted: 124 15% 22%;
+    --muted-foreground: 60 20% 65%;
+    --accent: 14 69% 62%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 23 10% 30%;
+    --input: 23 10% 25%;
+    --ring: 124 43% 39%;
+
+    --sidebar-background: 23 15% 18%;
+    --sidebar-foreground: 60 30% 90%;
+    --sidebar-primary: 124 43% 39%;
+    --sidebar-primary-foreground: 43 67% 97%;
+    --sidebar-accent: 124 20% 25%;
+    --sidebar-accent-foreground: 60 30% 90%;
+    --sidebar-border: 23 10% 30%;
+    --sidebar-ring: 124 43% 39%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground text-base md:text-sm;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

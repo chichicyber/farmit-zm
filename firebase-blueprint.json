@@ -1,0 +1,658 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique identifier, matching the Auth UID."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the application.",
+          "enum": [
+            "farmer",
+            "student",
+            "user"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account was created."
+        }
+      },
+      "required": [
+        "uid",
+        "firstName",
+        "lastName",
+        "email",
+        "role"
+      ]
+    },
+    "CropLesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CropLesson",
+      "type": "object",
+      "description": "Represents a structured lesson on crop production.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the crop lesson."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the crop lesson."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the crop lesson, potentially in markdown or HTML format."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category or topic of the crop lesson (e.g., planting, harvesting)."
+        },
+        "visualAidUrl": {
+          "type": "string",
+          "description": "URL to a visual aid (image, video) for the lesson.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "category"
+      ]
+    },
+    "AnimalLesson": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnimalLesson",
+      "type": "object",
+      "description": "Represents a structured lesson on animal production.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the animal lesson."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the animal lesson."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the animal lesson, potentially in markdown or HTML format."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category or topic of the animal lesson (e.g., feeding, health)."
+        },
+        "visualAidUrl": {
+          "type": "string",
+          "description": "URL to a visual aid (image, video) for the lesson.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "category"
+      ]
+    },
+    "CropTracking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CropTracking",
+      "type": "object",
+      "description": "Represents data for tracking a specific crop.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the crop tracking record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N CropTracking)"
+        },
+        "cropType": {
+          "type": "string",
+          "description": "Type of crop being tracked (e.g., maize, beans)."
+        },
+        "plantingDate": {
+          "type": "string",
+          "description": "Date when the crop was planted.",
+          "format": "date-time"
+        },
+        "growthStage": {
+          "type": "string",
+          "description": "Current growth stage of the crop.",
+          "enum": [
+            "planting",
+            "vegetative",
+            "flowering",
+            "fruiting",
+            "harvest"
+          ]
+        },
+        "expectedHarvestDate": {
+          "type": "string",
+          "description": "Expected date of harvest.",
+          "format": "date-time"
+        },
+        "fertilizerSchedule": {
+          "type": "object",
+          "description": "Structured data for fertilizer application.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type of fertilizer."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between applications."
+            },
+            "lastAppliedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last application."
+            },
+            "nextApplicationAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled application."
+            }
+          }
+        },
+        "weedingSchedule": {
+          "type": "object",
+          "description": "Structured data for weeding.",
+          "properties": {
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between weeding sessions."
+            },
+            "lastWeededAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last weeding."
+            },
+            "nextWeedingAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled weeding."
+            }
+          }
+        },
+        "sprayingSchedule": {
+          "type": "object",
+          "description": "Structured data for pesticide/chemical spraying.",
+          "properties": {
+            "chemical": {
+              "type": "string",
+              "description": "Name of the chemical used for spraying."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between spraying."
+            },
+            "lastSprayedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last spraying."
+            },
+            "nextSprayingAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled spraying."
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cropType",
+        "plantingDate",
+        "growthStage"
+      ]
+    },
+    "AnimalTracking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnimalTracking",
+      "type": "object",
+      "description": "Represents data for tracking a specific animal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the animal tracking record."
+        },
+        "tagId": {
+          "type": "string",
+          "description": "The unique tag or identifier for the animal."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N AnimalTracking)"
+        },
+        "animalType": {
+          "type": "string",
+          "description": "Type of animal being tracked (e.g., cow, goat)."
+        },
+        "healthStatus": {
+          "type": "string",
+          "description": "Current health status of the animal."
+        },
+        "growthMetrics": {
+          "type": "string",
+          "description": "Measurements of the animal's growth (e.g., weight, height)."
+        },
+        "locationLatitude": {
+          "type": "number",
+          "description": "Latitude of the animal's current location."
+        },
+        "locationLongitude": {
+          "type": "number",
+          "description": "Longitude of the animal's current location."
+        },
+        "feedingSchedule": {
+          "type": "object",
+          "description": "Structured data for animal feeding schedules.",
+          "properties": {
+            "timesPerDay": {
+              "type": "number",
+              "description": "How many times a day the animal is fed."
+            },
+            "timeSlots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "time"
+              },
+              "description": "Specific times for feeding, e.g., ['08:00', '17:00']."
+            },
+            "lastFedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last feeding."
+            }
+          }
+        },
+        "vaccinationSchedule": {
+          "type": "object",
+          "description": "Structured data for animal vaccination schedules.",
+          "properties": {
+            "vaccineName": {
+              "type": "string",
+              "description": "Name of the vaccine."
+            },
+            "intervalDays": {
+              "type": "number",
+              "description": "Interval in days between vaccinations."
+            },
+            "lastVaccinatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the last vaccination."
+            },
+            "nextVaccinationAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp for the next scheduled vaccination."
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "animalType",
+        "tagId"
+      ]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder for a specific task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the reminder."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Reminder)"
+        },
+        "task": {
+          "type": "string",
+          "description": "Description of the task to be reminded about."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date and time when the reminder should trigger.",
+          "format": "date-time"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Indicates whether the reminder has been completed."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the reminder.",
+          "enum": [
+            "Crops",
+            "Animals",
+            "General"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "description": "The priority level of the reminder.",
+          "enum": [
+            "High",
+            "Medium",
+            "Low"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "task",
+        "dueDate"
+      ]
+    },
+    "Advice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Advice",
+      "type": "object",
+      "description": "Represents a piece of saved AI-generated advice for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the advice record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Advice)"
+        },
+        "cropType": {
+          "type": "string",
+          "description": "The crop type for which the advice was generated."
+        },
+        "growthStage": {
+          "type": "string",
+          "description": "The growth stage for which the advice was generated."
+        },
+        "recommendation": {
+          "type": "string",
+          "description": "The AI-generated recommendation text, in markdown format."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the advice was saved.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cropType",
+        "growthStage",
+        "recommendation",
+        "createdAt"
+      ]
+    },
+    "Diagnosis": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Diagnosis",
+      "type": "object",
+      "description": "Represents a saved AI-generated diagnosis for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the diagnosis record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Diagnosis)"
+        },
+        "question": {
+          "type": "string",
+          "description": "The user's question to the Farm Doctor."
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "The AI-generated diagnosis text, in markdown format."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the diagnosis was saved.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "question",
+        "diagnosis",
+        "createdAt"
+      ]
+    },
+    "Device": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Device",
+      "type": "object",
+      "description": "Represents a user's device for push notifications.",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Firebase Cloud Messaging (FCM) device token."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the device was registered."
+        }
+      },
+      "required": [
+        "token",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/entities/UserProfile"
+          },
+          "description": "Stores public profile information for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/crop_tracking/{cropTrackingId}",
+        "definition": {
+          "entityName": "CropTracking",
+          "schema": {
+            "$ref": "#/entities/CropTracking"
+          },
+          "description": "Stores crop tracking data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the crop tracking data."
+            },
+            {
+              "name": "cropTrackingId",
+              "description": "The ID of the crop tracking document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/animal_tracking/{animalTrackingId}",
+        "definition": {
+          "entityName": "AnimalTracking",
+          "schema": {
+            "$ref": "#/entities/AnimalTracking"
+          },
+          "description": "Stores animal tracking data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the animal tracking data."
+            },
+            {
+              "name": "animalTrackingId",
+              "description": "The ID of the animal tracking document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/entities/Reminder"
+          },
+          "description": "Stores reminder data for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the reminder data."
+            },
+            {
+              "name": "reminderId",
+              "description": "The ID of the reminder document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/advices/{adviceId}",
+        "definition": {
+          "entityName": "Advice",
+          "schema": {
+            "$ref": "#/entities/Advice"
+          },
+          "description": "Stores saved AI advice for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the advice data."
+            },
+            {
+              "name": "adviceId",
+              "description": "The ID of the advice document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/diagnoses/{diagnosisId}",
+        "definition": {
+          "entityName": "Diagnosis",
+          "schema": {
+            "$ref": "#/entities/Diagnosis"
+          },
+          "description": "Stores saved AI diagnoses for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the diagnosis data."
+            },
+            {
+              "name": "diagnosisId",
+              "description": "The ID of the diagnosis document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/devices/{deviceId}",
+        "definition": {
+          "entityName": "Device",
+          "schema": {
+            "$ref": "#/entities/Device"
+          },
+          "description": "Stores FCM tokens for a user's devices.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the device."
+            },
+            {
+              "name": "deviceId",
+              "description": "The ID of the device document, typically the FCM token."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/crop_lessons/{cropLessonId}",
+        "definition": {
+          "entityName": "CropLesson",
+          "schema": {
+            "$ref": "#/entities/CropLesson"
+          },
+          "description": "Stores crop lesson data, accessible to all users.",
+          "params": [
+            {
+              "name": "cropLessonId",
+              "description": "The ID of the crop lesson document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/animal_lessons/{animalLessonId}",
+        "definition": {
+          "entityName": "AnimalLesson",
+          "schema": {
+            "$ref": "#/entities/AnimalLesson"
+          },
+          "description": "Stores animal lesson data, accessible to all users.",
+          "params": [
+            {
+              "name": "animalLessonId",
+              "description": "The ID of the animal lesson document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure data isolation per user, simplify security rules, and optimize query performance. We leverage path-based ownership for user-specific data and structural segregation to maintain a homogeneous security posture across collections. The design prioritizes Authorization Independence, ensuring that security rules can be evaluated without requiring `get()` calls to parent documents. This independence is achieved through data denormalization, specifically by including the 'userId' in all documents within the user-owned collections.\n\n*   **User Data Isolation:**  A `UserProfile` document is now stored at `/users/{userId}`. All other user-specific data (CropTracking, AnimalTracking, Reminders, and Advice) are stored under subcollections of this user document. This ensures that only the authenticated user can access their data.\n*   **Authorization Independence:** By including `userId` in all CropTracking, AnimalTracking, and Reminder documents, security rules can validate ownership based solely on the document's data and the `request.auth.uid`, without needing to perform expensive `get()` operations to parent documents. This allows atomic operations and simplifies debugging.\n*   **Lessons:** CropLesson and AnimalLesson are stored in separate collections (`/crop_lessons` and `/animal_lessons` respectively). This structural segregation is used as those lessons will be available to every user (no user id).\n*   **QAPs:** List operations are secured because each collection either contains only user-owned data (enforced by path-based ownership) or globally accessible data (lessons). Rules ensure users can only list documents under their own user ID.\n"
+  }
+}

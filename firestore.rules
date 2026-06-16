@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      // Checks if the requesting user is the owner of the document.
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Safely checks if the user has an 'admin' role or is the designated admin email.
+      return request.auth != null 
+             && (request.auth.token.email == "henrychemba@gmail.com"
+                 || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+                     && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    match /users/{userId} {
+      // READ: A user can get their own profile, or an admin can get any profile.
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // LIST: Only admins can list all users.
+      allow list: if isAdmin();
+      
+      // CREATE: A user can create their own profile, or an admin can create any profile.
+      allow create: if isOwner(userId) || isAdmin();
+
+      // UPDATE: A user can update their own profile, but cannot change their role.
+      // An admin can update any part of any user's profile.
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+
+      // DELETE: Deleting users from the client is not allowed.
+      allow delete: if false;
+
+      // Recursive wildcard for all user-owned data (reminders, crops, animals, etc.)
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Rules for public, read-only lesson collections
+    match /crop_lessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /animal_lessons/{animalLessonId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
