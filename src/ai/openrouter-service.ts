@@ -6,14 +6,13 @@
  * This function handles only the API communication. It does NOT handle authentication.
  */
 
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
-
 export async function callOpenRouter(payload: {
   model: string;
   messages: any[];
   temperature?: number;
 }): Promise<string> {
-  if (!process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY.includes('YOUR_OPENROUTER_KEY')) {
+  const apiKey = process.env.OPENROUTER_API_KEY || '';
+  if (!apiKey || apiKey.includes('YOUR_OPENROUTER_KEY')) {
     console.error('OPENROUTER_API_KEY is missing or invalid in environment variables.');
   }
 
@@ -21,7 +20,7 @@ export async function callOpenRouter(payload: {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost:3000',
         'X-Title': 'Farmit ZM Platform',
@@ -34,8 +33,8 @@ export async function callOpenRouter(payload: {
     });
 
     const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Failed to fetch from OpenRouter');
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message || data.error || 'Failed to fetch from OpenRouter');
     }
 
     return data.choices?.[0]?.message?.content || 'No response generated.';
