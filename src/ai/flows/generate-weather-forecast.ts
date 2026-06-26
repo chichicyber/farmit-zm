@@ -2,12 +2,11 @@
 
 import { WeatherForecastSchema, type WeatherForecast } from '@/ai/types';
 
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
-
 export async function generateWeatherForecast(
   lat: number,
   lon: number
 ): Promise<WeatherForecast[]> {
+  const apiKey = process.env.OPENROUTER_API_KEY || '';
   const prompt = `You are a weather service. Provide a 3-day forecast for (Lat: ${lat}, Lon: ${lon}).
     First day: "Today", second: "Tomorrow", third: "Next Day".
     Respond ONLY with a raw JSON array of objects.
@@ -18,7 +17,7 @@ export async function generateWeatherForecast(
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'http://localhost:3000',
         'X-Title': 'Farmit ZM Platform',
@@ -31,7 +30,9 @@ export async function generateWeatherForecast(
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message);
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message || data.error || 'Failed to fetch from OpenRouter');
+    }
 
     const text = data.choices?.[0]?.message?.content || '[]';
     const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
